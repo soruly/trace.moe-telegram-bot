@@ -76,7 +76,7 @@ bot.on('message', function (msg) {
           var src = searchResult.docs[0]
           var similarity = (100 - parseFloat(src.diff)).toFixed(1)
           var text = ''
-          if (similarity >= 90) {
+          if (similarity >= 88) {
             text = src.title + '\n'
             text += src.anime + '\n'
             text += src.title_english + '\n'
