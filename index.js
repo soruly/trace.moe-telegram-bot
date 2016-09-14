@@ -5,6 +5,8 @@ var fs = require('fs');
 var path = require('path');
 const Datauri = require('datauri');
 
+var config = require('./config');
+
 var options = {
   webHook: {
     port: 8022
@@ -12,7 +14,7 @@ var options = {
   polling: true
 };
 
-var token = '120344021:AAH_6bteEyGr4FIYR0X7CV2oQ0jdnKZaDeM';
+var token = config.token;
 var bot = new TelegramBot(token, options);
 bot.setWebHook('https://whatanime.ga/webhook-telegram/'+token);
 
