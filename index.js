@@ -21,7 +21,11 @@ bot.setWebHook('https://whatanime.ga/webhook-telegram/'+token);
 bot.onText(/\/start (.+)/, function (msg, match) {
   var fromId = msg.from.id;
   var resp = match[1];
-  bot.sendMessage(fromId, "You can Send / Forward anime screenshots to me ;)");
+});
+
+bot.onText(/\/start/, function (msg) {
+  var fromId = msg.from.id;
+  bot.sendMessage(fromId, "You can Send / Forward anime screenshots to me. I can't get images from URLs, please send the image directly to me ;)");
 });
 
 bot.on('message', function (msg) {
@@ -69,8 +73,13 @@ bot.on('message', function (msg) {
     else if (response.statusCode == 429) {
       bot.sendMessage(chatId, "You have searched too much, please wait a while and try again.");
     } else {
+try {
+    var resultBody = JSON.parse(body);
+}
+catch(err) {
+    console.log(body);
+}
       var searchResult = JSON.parse(body)
-      console.log(searchResult)
       if (searchResult.docs) {
         if (searchResult.docs.length > 0) {
           var src = searchResult.docs[0]
