@@ -84,7 +84,7 @@ bot.on('message', function (msg) {
                     var text = ''
                     if (similarity >= 0.88) {
                       text = src.title + '\n'
-                      text += src.anime + '\n'
+                      text += src.title_chinese + '\n'
                       text += src.title_english + '\n'
                       text += 'EP#' + zeroPad(src.episode, 2) + ' ' + formatTime(src.at) + '\n'
                       text += '' + similarity + '% similarity\n'
