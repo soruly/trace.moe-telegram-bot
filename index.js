@@ -9,14 +9,14 @@ var config = require('./config');
 
 var options = {
   webHook: {
-    port: 8022
+    port: config.port
   },
   polling: true
 };
 
 var token = config.token;
 var bot = new TelegramBot(token, options);
-bot.setWebHook('https://whatanime.ga/webhook-telegram/'+token);
+bot.setWebHook(config.webhook);
 
 bot.onText(/\/start (.+)/, function (msg, match) {
   var fromId = msg.from.id;
@@ -35,79 +35,74 @@ bot.on('message', function (msg) {
     bot.sendMessage(chatId, "Downloading your image...");
     let largest_file = msg.photo.pop();
     request('https://api.telegram.org/bot'+token+'/getFile?file_id='+largest_file.file_id, function (error, response, body) {
-    if (!error && response.statusCode == 200) {
-    let file = JSON.parse(body);
-    //console.log(file.result.file_path);
-    let url = 'https://api.telegram.org/file/bot'+token+'/'+file.result.file_path;
-    let milliseconds = (new Date).getTime()
-    let file_path = path.resolve(__dirname,milliseconds+'.jpg');
-    request({uri: url})
-      .pipe(fs.createWriteStream(file_path))
-      .on('close', function() {
+      if (!error && response.statusCode == 200) {
+        let file = JSON.parse(body);
+        //console.log(file.result.file_path);
+        let url = 'https://api.telegram.org/file/bot'+token+'/'+file.result.file_path;
+        let milliseconds = (new Date).getTime()
+        let file_path = path.resolve(__dirname,'uploads',milliseconds+'.jpg');
+        request({uri: url})
+          .pipe(fs.createWriteStream(file_path))
+          .on('close', function() {
 
-        bot.sendMessage(chatId, "I've got your image, searching...");
+            bot.sendMessage(chatId, "I've got your image, searching...");
 
-        var datauri = new Datauri(file_path);
-        var formData = querystring.stringify({data: datauri.content});
-        var contentLength = formData.length;
-        
+            var datauri = new Datauri(file_path);
+            var formData = querystring.stringify({image: datauri.content});
+            var contentLength = formData.length;
 
 
-  request({
-    headers: {
-      'Content-Length': contentLength,
-      'Content-Type': 'application/x-www-form-urlencoded',
-      'X-Requested-With': 'XMLHttpRequest',
-      'Refer': 'https://whatanime.ga/',
-      'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/49.0.2623.112 Safari/537.36'
-    },
-    uri: 'https://whatanime.ga/search',
-    body: formData,
-    method: 'POST'
-  }, function (error, response, body) {
-    if (error) {
-      console.log('Error sending message: ', error)
-    } else if (response.body.error) {
-      console.log('Error: ', response.body.error)
-    }
-    else if (response.statusCode == 429) {
-      bot.sendMessage(chatId, "You have searched too much, please wait a while and try again.");
-    } else {
-try {
-    var resultBody = JSON.parse(body);
-}
-catch(err) {
-    console.log(body);
-}
-      var searchResult = JSON.parse(body)
-      if (searchResult.docs) {
-        if (searchResult.docs.length > 0) {
-          var src = searchResult.docs[0]
-          var similarity = (100 - parseFloat(src.diff)).toFixed(1)
-          var text = ''
-          if (similarity >= 88) {
-            text = src.title + '\n'
-            text += src.anime + '\n'
-            text += src.title_english + '\n'
-            text += 'EP#' + zeroPad(src.episode, 2) + ' ' + formatTime(src.from) + '\n'
-            text += '' + similarity + '% similarity\n'
-          } else {
-            text = "Sorry, I don't know what anime is it :\\"
-          }
-          bot.sendMessage(chatId, text);
-        } else {
-          bot.sendMessage(chatId, "Sorry, I don't know what anime is it :\\");
-        }
+            request({
+              headers: {
+                'Content-Length': contentLength,
+                'Content-Type': 'application/x-www-form-urlencoded'
+              },
+              uri: 'https://whatanime.ga/api/search?token='+config.whatanime_token,
+              body: formData,
+              method: 'POST'
+            }, function (error, response, body) {
+              if (error) {
+                console.log('Error sending message: ', error)
+              } else if (response.body.error) {
+                console.log('Error: ', response.body.error)
+              }
+              else if (response.statusCode == 429) {
+                bot.sendMessage(chatId, "Bot search limit exceeded, please try again later.");
+              } else {
+                try {
+                  var resultBody = JSON.parse(body);
+                }
+                catch(err) {
+                  console.log(response.statusCode);
+                  console.log(response.body);
+                }
+                var searchResult = JSON.parse(body)
+                if (searchResult.docs) {
+                  if (searchResult.docs.length > 0) {
+                    var src = searchResult.docs[0]
+                    var similarity = (src.similarity*100).toFixed(1)
+                    var text = ''
+                    if (similarity >= 0.88) {
+                      text = src.title + '\n'
+                      text += src.anime + '\n'
+                      text += src.title_english + '\n'
+                      text += 'EP#' + zeroPad(src.episode, 2) + ' ' + formatTime(src.at) + '\n'
+                      text += '' + similarity + '% similarity\n'
+                    } else {
+                      text = "Sorry, I don't know what anime is it :\\"
+                    }
+                    bot.sendMessage(chatId, text);
+                  } else {
+                    bot.sendMessage(chatId, "Sorry, I don't know what anime is it :\\");
+                  }
+                }
+              }
+            })
+
+
+          });
       }
-    }
-  })
-
-
-
-
-      });
-    }
-  })
+    })
 
   }
 });

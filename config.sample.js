@@ -1,5 +1,8 @@
 var config = {};
 
-config.token = '000000000:XXXXXXXXXXXXXXXXXXXXXX';
+config.port = 3003;
+config.token = '';
+config.webhook = ''+config.token;
+config.whatanime_token = '';
 
 module.exports = config;
