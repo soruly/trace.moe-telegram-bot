@@ -92,6 +92,10 @@ bot.on('message', function (msg) {
                       text = "Sorry, I don't know what anime is it :\\"
                     }
                     bot.sendMessage(chatId, text);
+                    
+                    var videoLink = 'https://whatanime.ga/preview.php?season=' + encodeURIComponent(src.season) + '&anime=' + encodeURIComponent(src.anime) + '&file=' + encodeURIComponent(src.filename) + '&t=' + (src.at) + '&token=' + src.tokenthumb;
+                    bot.sendVideo(chatId, videoLink);
+
                   } else {
                     bot.sendMessage(chatId, "Sorry, I don't know what anime is it :\\");
                   }
