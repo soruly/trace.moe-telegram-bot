@@ -11,7 +11,7 @@ var options = {
   webHook: {
     port: config.port
   },
-  polling: true
+  polling: false
 };
 
 var token = config.token;
