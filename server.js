@@ -32,7 +32,7 @@ bot.on('message', function (msg) {
   var chatId = msg.chat.id;
   var photo = 'cats.png';
   if(msg.photo){
-    bot.sendMessage(chatId, "Downloading your image...");
+    bot.sendMessage(chatId, "Downloading your image...").then(function(message){
     let largest_file = msg.photo.pop();
     request('https://api.telegram.org/bot'+token+'/getFile?file_id='+largest_file.file_id, function (error, response, body) {
       if (!error && response.statusCode == 200) {
@@ -41,17 +41,15 @@ bot.on('message', function (msg) {
         let url = 'https://api.telegram.org/file/bot'+token+'/'+file.result.file_path;
         let milliseconds = (new Date).getTime()
         let file_path = path.resolve(__dirname,'uploads',milliseconds+'.jpg');
+        let messageID = message.message_id;
+        let chatID = message.chat.id;
         request({uri: url})
           .pipe(fs.createWriteStream(file_path))
           .on('close', function() {
-
-            bot.sendMessage(chatId, "I've got your image, searching...");
-
+            bot.editMessageText("Downloading your image...searching...", {chat_id: chatID, message_id: messageID});
             var datauri = new Datauri(file_path);
             var formData = querystring.stringify({image: datauri.content});
             var contentLength = formData.length;
-
-
             request({
               headers: {
                 'Content-Length': contentLength,
@@ -92,21 +90,18 @@ bot.on('message', function (msg) {
                       text = "Sorry, I don't know what anime is it :\\"
                     }
                     bot.sendMessage(chatId, text);
-                    
                     var videoLink = 'https://whatanime.ga/preview.php?season=' + encodeURIComponent(src.season) + '&anime=' + encodeURIComponent(src.anime) + '&file=' + encodeURIComponent(src.filename) + '&t=' + (src.at) + '&token=' + src.tokenthumb;
                     bot.sendVideo(chatId, videoLink);
-
                   } else {
                     bot.sendMessage(chatId, "Sorry, I don't know what anime is it :\\");
                   }
                 }
               }
             })
-
-
           });
       }
-    })
+    });
+    });
 
   }
 });
