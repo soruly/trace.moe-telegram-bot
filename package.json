@@ -10,6 +10,6 @@
   "license": "MIT",
   "dependencies": {
     "datauri": "^1.0.5",
-    "node-telegram-bot-api": "^0.27.1"
+    "node-telegram-bot-api": "^0.28.0"
   }
 }
