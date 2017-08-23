@@ -1,130 +1,162 @@
-var TelegramBot = require('node-telegram-bot-api');
-var request = require('request');
-var querystring = require('querystring')
-var fs = require('fs');
-var path = require('path');
+const TelegramBot = require('node-telegram-bot-api');
+const request = require('requestretry');
+const querystring = require('querystring');
+const fs = require('fs');
+const path = require('path');
 const Datauri = require('datauri');
 
-var config = require('./config');
+const config = require('./config');
 
-var options = {
+const options = {
   webHook: {
     port: config.port
   },
   polling: false
 };
 
-var token = config.token;
-var bot = new TelegramBot(token, options);
+const upload_dir = path.resolve(__dirname, 'uploads');
+if (!fs.existsSync(upload_dir)) {
+  fs.mkdirSync(upload_dir);
+}
+
+const token = config.token;
+const bot = new TelegramBot(token, options);
 bot.setWebHook(config.webhook);
 
-bot.onText(/\/start (.+)/, function (msg, match) {
-  var fromId = msg.from.id;
-  var resp = match[1];
+bot.getMe().then(function (result) {
+  config.username = result.username;
+  console.log(result);
 });
 
-bot.onText(/\/start/, function (msg) {
-  var fromId = msg.from.id;
-  bot.sendMessage(fromId, "You can Send / Forward anime screenshots to me. I can't get images from URLs, please send the image directly to me ;)");
-});
+const zeroPad = function (n, width, z) {
+  z = z || '0';
+  n = n + '';
+  return n.length >= width ? n : new Array(width - n.length + 1).join(z) + n;
+};
 
-bot.on('message', function (msg) {
-  var chatId = msg.chat.id;
-  var photo = 'cats.png';
-  if(msg.photo){
-    bot.sendMessage(chatId, "Downloading your image...").then(function(message){
-    let largest_file = msg.photo.pop();
-    request('https://api.telegram.org/bot'+token+'/getFile?file_id='+largest_file.file_id, function (error, response, body) {
-      if (!error && response.statusCode == 200) {
-        let file = JSON.parse(body);
-        //console.log(file.result.file_path);
-        let url = 'https://api.telegram.org/file/bot'+token+'/'+file.result.file_path;
-        let milliseconds = (new Date).getTime()
-        let file_path = path.resolve(__dirname,'uploads',milliseconds+'.jpg');
-        let messageID = message.message_id;
-        let chatID = message.chat.id;
-        request({uri: url})
-          .pipe(fs.createWriteStream(file_path))
-          .on('close', function() {
-            bot.editMessageText("Downloading your image...searching...", {chat_id: chatID, message_id: messageID});
-            var datauri = new Datauri(file_path);
-            var formData = querystring.stringify({image: datauri.content});
-            var contentLength = formData.length;
-            request({
-              headers: {
-                'Content-Length': contentLength,
-                'Content-Type': 'application/x-www-form-urlencoded'
-              },
-              uri: 'https://whatanime.ga/api/search?token='+config.whatanime_token,
-              body: formData,
-              method: 'POST'
-            }, function (error, response, body) {
-              if (error) {
-                console.log('Error sending message: ', error)
-              } else if (response.body.error) {
-                console.log('Error: ', response.body.error)
-              }
-              else if (response.statusCode == 429) {
-                bot.sendMessage(chatId, "Bot search limit exceeded, please try again later.");
-              } else {
-                try {
-                  var resultBody = JSON.parse(body);
-                }
-                catch(err) {
-                  console.log(response.statusCode);
-                  console.log(response.body);
-                }
-                var searchResult = JSON.parse(body)
-                if (searchResult.docs) {
-                  if (searchResult.docs.length > 0) {
-                    var src = searchResult.docs[0]
-                    var similarity = (src.similarity*100).toFixed(1)
-                    var text = ''
-                    if (similarity >= 0.88) {
-                      text = src.title + '\n'
-                      text += src.title_chinese + '\n'
-                      text += src.title_english + '\n'
-                      text += 'EP#' + zeroPad(src.episode, 2) + ' ' + formatTime(src.at) + '\n'
-                      text += '' + similarity + '% similarity\n'
-                    } else {
-                      text = "Sorry, I don't know what anime is it :\\"
-                    }
-                    bot.sendMessage(chatId, text);
-                    var videoLink = 'https://whatanime.ga/preview.php?season=' + encodeURIComponent(src.season) + '&anime=' + encodeURIComponent(src.anime) + '&file=' + encodeURIComponent(src.filename) + '&t=' + (src.at) + '&token=' + src.tokenthumb;
-                    bot.sendVideo(chatId, videoLink);
-                  } else {
-                    bot.sendMessage(chatId, "Sorry, I don't know what anime is it :\\");
-                  }
-                }
-              }
-            })
-          });
-      }
-    });
-    });
+const formatTime = function (timeInSeconds) {
+  const sec_num = parseInt(timeInSeconds, 10);
+  let hours = Math.floor(sec_num / 3600);
+  let minutes = Math.floor((sec_num - (hours * 3600)) / 60);
+  let seconds = sec_num - (hours * 3600) - (minutes * 60);
 
+  if (hours < 10) {
+    hours = '0' + hours;
   }
-});
+  if (minutes < 10) {
+    minutes = '0' + minutes;
+  }
+  if (seconds < 10) {
+    seconds = '0' + seconds;
+  }
 
+  return hours + ':' + minutes + ':' + seconds;
+};
 
-var zeroPad = function (n, width, z) {
-  z = z || '0'
-  n = n + ''
-  return n.length >= width ? n : new Array(width - n.length + 1).join(z) + n
-}
+const welcomeHandler = function (message) {
+  bot.sendMessage(message.from.id, "You can Send / Forward anime screenshots to me. I can't get images from URLs, please send the image directly to me ;)");
+};
 
+const submitSearch = function (file_path) {
+  return new Promise((resolve, reject) => {
+    const datauri = new Datauri(file_path);
+    const formData = querystring.stringify({image: datauri.content});
+    const contentLength = formData.length;
+    request({
+      headers: {
+        'Content-Length': contentLength,
+        'Content-Type': 'application/x-www-form-urlencoded'
+      },
+      uri: 'https://whatanime.ga/api/search?token=' + config.whatanime_token,
+      body: formData,
+      method: 'POST'
+    })
+      .then(function (response) {
+        const searchResult = JSON.parse(response.body);
+        if (searchResult.docs) {
+          if (searchResult.docs.length > 0) {
+            const src = searchResult.docs[0];
+            const similarity = (src.similarity * 100).toFixed(1);
+            let text = '';
+            if (similarity >= 0.88) {
+              text = src.title + '\n';
+              text += src.title_chinese + '\n';
+              text += src.title_english + '\n';
+              text += 'EP#' + zeroPad(src.episode, 2) + ' ' + formatTime(src.at) + '\n';
+              text += '' + similarity + '% similarity\n';
+            } else {
+              text = "Sorry, I don't know what anime is it :\\";
+            }
+            const videoLink = 'https://whatanime.ga/preview.php?season=' + encodeURIComponent(src.season) + '&anime=' + encodeURIComponent(src.anime) + '&file=' + encodeURIComponent(src.filename) + '&t=' + (src.at) + '&token=' + src.tokenthumb;
+            resolve({text: text, video: videoLink});
+          } else {
+            resolve({text: "Sorry, I don't know what anime is it :\\"});
+          }
+        }
+      })
+      .catch(function (error) {
+        reject(error);
+      });
+  });
+};
 
-var formatTime = function (timeInSeconds) {
-  var sec_num = parseInt(timeInSeconds, 10)
-  var hours = Math.floor(sec_num / 3600)
-  var minutes = Math.floor((sec_num - (hours * 3600)) / 60)
-  var seconds = sec_num - (hours * 3600) - (minutes * 60)
+const messageIsMentioningBot = (message) =>
+  message.entities ? message.entities
+    .filter(entity => entity.type === 'mention')
+    .map(entity => message.text.substr(entity.offset, entity.length))
+    .filter(entity => entity === `@${config.username}`)
+    .length >= 1
+    : false;
 
-  if (hours < 10) {hours = '0' + hours;}
-  if (minutes < 10) {minutes = '0' + minutes;}
-  if (seconds < 10) {seconds = '0' + seconds;}
-  var timestring = hours + ':' + minutes + ':' + seconds
+const messageHandler = function (message) {
+  if (message.chat.type === 'private' && message.photo) {
+    bot.sendMessage(message.chat.id, "Downloading your image...", {reply_to_message_id: message.message_id})
+      .then(function (bot_message) {
+        const largest_file = message.photo.pop();
+        request('https://api.telegram.org/bot' + token + '/getFile?file_id=' + largest_file.file_id)
+          .then(function (response) {
+            const file_path = path.resolve(upload_dir, (new Date).getTime() + '.jpg');
+            request('https://api.telegram.org/file/bot' + token + '/' + JSON.parse(response.body).result.file_path)
+              .pipe(fs.createWriteStream(file_path))
+              .on('close', function () {
+                bot.editMessageText("Downloading your image...searching...", {chat_id: bot_message.chat.id, message_id: bot_message.message_id});
+                submitSearch(file_path)
+                  .then(function (result) {
+                    bot.editMessageText(result.text, {chat_id: bot_message.chat.id, message_id: bot_message.message_id});
+                    bot.sendVideo(message.chat.id, result.video);
+                  })
+                  .catch(function (error) {
+                    console.log(error);
+                  });
+              });
+          });
+      });
 
-  return timestring
-}
+  } else if (message.chat.type === 'group' && messageIsMentioningBot(message)) {
+    if (message.reply_to_message && message.reply_to_message.photo) {
+      const largest_file = message.reply_to_message.photo.pop();
+      request('https://api.telegram.org/bot' + token + '/getFile?file_id=' + largest_file.file_id)
+        .then(function (response) {
+          const file_path = path.resolve(upload_dir, (new Date).getTime() + '.jpg');
+          request('https://api.telegram.org/file/bot' + token + '/' + JSON.parse(response.body).result.file_path)
+            .pipe(fs.createWriteStream(file_path))
+            .on('close', function () {
+              submitSearch(file_path)
+                .then(function (result) {
+                  bot.sendMessage(message.chat.id, result.text, {reply_to_message_id: message.reply_to_message.message_id});
+                  bot.sendVideo(message.chat.id, result.video, {reply_to_message_id: message.reply_to_message.message_id});
+                })
+                .catch(function (error) {
+                  console.log(error);
+                });
+            });
+        });
+    } else {
+      bot.sendMessage(message.chat.id, 'Mention me in a photo, I will tell you what anime is that', {reply_to_message_id: message.message_id});
+    }
+  }
+};
 
+bot.onText(/\/start/, welcomeHandler);
+
+bot.on('message', messageHandler);
