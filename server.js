@@ -78,7 +78,7 @@ const submitSearch = function (file_path) {
             const src = searchResult.docs[0];
             const similarity = (src.similarity * 100).toFixed(1);
             let text = '';
-            if (src.similarity < 0.9) {
+            if (src.similarity < 0.92) {
               text = 'I have low confidence on this, wild guess:' + '\n';
             }
             text += '```';
