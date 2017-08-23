@@ -132,7 +132,7 @@ const messageHandler = function (message) {
           });
       });
 
-  } else if (message.chat.type === 'group' && message.chat.type === 'supergroup' && messageIsMentioningBot(message)) {
+  } else if ((message.chat.type === 'group' || message.chat.type === 'supergroup') && messageIsMentioningBot(message)) {
     if (message.reply_to_message && message.reply_to_message.photo) {
       const largest_file = message.reply_to_message.photo.pop();
       request('https://api.telegram.org/bot' + token + '/getFile?file_id=' + largest_file.file_id)
