@@ -78,15 +78,14 @@ const submitSearch = function (file_path) {
             const src = searchResult.docs[0];
             const similarity = (src.similarity * 100).toFixed(1);
             let text = '';
-            if (similarity >= 0.88) {
-              text = src.title + '\n';
-              text += src.title_chinese + '\n';
-              text += src.title_english + '\n';
-              text += 'EP#' + zeroPad(src.episode, 2) + ' ' + formatTime(src.at) + '\n';
-              text += '' + similarity + '% similarity\n';
-            } else {
-              text = "Sorry, I don't know what anime is it :\\";
+            if (src.similarity < 0.9) {
+              text = 'I have low confidence on this, wild guess:' + '\n';
             }
+            text += src.title + '\n';
+            text += src.title_chinese + '\n';
+            text += src.title_english + '\n';
+            text += 'EP#' + zeroPad(src.episode, 2) + ' ' + formatTime(src.at) + '\n';
+            text += '' + similarity + '% similarity\n';
             const videoLink = 'https://whatanime.ga/preview.php?season=' + encodeURIComponent(src.season) + '&anime=' + encodeURIComponent(src.anime) + '&file=' + encodeURIComponent(src.filename) + '&t=' + (src.at) + '&token=' + src.tokenthumb;
             resolve({text: text, video: videoLink});
           } else {
