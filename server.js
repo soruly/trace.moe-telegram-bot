@@ -81,11 +81,13 @@ const submitSearch = function (file_path) {
             if (src.similarity < 0.9) {
               text = 'I have low confidence on this, wild guess:' + '\n';
             }
+            text += '```';
             text += src.title + '\n';
             text += src.title_chinese + '\n';
             text += src.title_english + '\n';
             text += 'EP#' + zeroPad(src.episode, 2) + ' ' + formatTime(src.at) + '\n';
-            text += '' + similarity + '% similarity\n';
+            text += '' + similarity + '% similarity';
+            text += '```';
             const videoLink = 'https://whatanime.ga/preview.php?season=' + encodeURIComponent(src.season) + '&anime=' + encodeURIComponent(src.anime) + '&file=' + encodeURIComponent(src.filename) + '&t=' + (src.at) + '&token=' + src.tokenthumb;
             resolve({text: text, video: videoLink});
           } else {
@@ -109,7 +111,7 @@ const messageIsMentioningBot = (message) =>
 
 const messageHandler = function (message) {
   if (message.chat.type === 'private' && message.photo) {
-    bot.sendMessage(message.chat.id, "Downloading your image...", {reply_to_message_id: message.message_id})
+    bot.sendMessage(message.chat.id, "Downloading your image...", {reply_to_message_id: message.message_id, parse_mode: 'Markdown'})
       .then(function (bot_message) {
         const largest_file = message.photo.pop();
         request('https://api.telegram.org/bot' + token + '/getFile?file_id=' + largest_file.file_id)
@@ -118,10 +120,10 @@ const messageHandler = function (message) {
             request('https://api.telegram.org/file/bot' + token + '/' + JSON.parse(response.body).result.file_path)
               .pipe(fs.createWriteStream(file_path))
               .on('close', function () {
-                bot.editMessageText("Downloading your image...searching...", {chat_id: bot_message.chat.id, message_id: bot_message.message_id});
+                bot.editMessageText("Downloading your image...searching...", {chat_id: bot_message.chat.id, message_id: bot_message.message_id, parse_mode: 'Markdown'});
                 submitSearch(file_path)
                   .then(function (result) {
-                    bot.editMessageText(result.text, {chat_id: bot_message.chat.id, message_id: bot_message.message_id});
+                    bot.editMessageText(result.text, {chat_id: bot_message.chat.id, message_id: bot_message.message_id, parse_mode: 'Markdown'});
                     if (result.video) {
                       bot.sendVideo(message.chat.id, result.video);
                     }
@@ -144,7 +146,7 @@ const messageHandler = function (message) {
             .on('close', function () {
               submitSearch(file_path)
                 .then(function (result) {
-                  bot.sendMessage(message.chat.id, result.text, {reply_to_message_id: message.reply_to_message.message_id});
+                  bot.sendMessage(message.chat.id, result.text, {reply_to_message_id: message.reply_to_message.message_id, parse_mode: 'Markdown'});
                   if (result.video) {
                     bot.sendVideo(message.chat.id, result.video, {reply_to_message_id: message.reply_to_message.message_id});
                   }
