@@ -123,7 +123,9 @@ const messageHandler = function (message) {
                 submitSearch(file_path)
                   .then(function (result) {
                     bot.editMessageText(result.text, {chat_id: bot_message.chat.id, message_id: bot_message.message_id});
-                    bot.sendVideo(message.chat.id, result.video);
+                    if (result.video) {
+                      bot.sendVideo(message.chat.id, result.video);
+                    }
                   })
                   .catch(function (error) {
                     console.log(error);
@@ -144,7 +146,9 @@ const messageHandler = function (message) {
               submitSearch(file_path)
                 .then(function (result) {
                   bot.sendMessage(message.chat.id, result.text, {reply_to_message_id: message.reply_to_message.message_id});
-                  bot.sendVideo(message.chat.id, result.video, {reply_to_message_id: message.reply_to_message.message_id});
+                  if (result.video) {
+                    bot.sendVideo(message.chat.id, result.video, {reply_to_message_id: message.reply_to_message.message_id});
+                  }
                 })
                 .catch(function (error) {
                   console.log(error);
