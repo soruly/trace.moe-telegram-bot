@@ -30,7 +30,7 @@ bot.getMe().then(function (result) {
 
 const zeroPad = function (n, width, z) {
   z = z || "0";
-  n = n + "";
+  n = `${n}`;
   return n.length >= width ? n : new Array(width - n.length + 1).join(z) + n;
 };
 
@@ -41,16 +41,16 @@ const formatTime = function (timeInSeconds) {
   let seconds = sec_num - (hours * 3600) - (minutes * 60);
 
   if (hours < 10) {
-    hours = "0" + hours;
+    hours = `0${hours}`;
   }
   if (minutes < 10) {
-    minutes = "0" + minutes;
+    minutes = `0${minutes}`;
   }
   if (seconds < 10) {
-    seconds = "0" + seconds;
+    seconds = `0${seconds}`;
   }
 
-  return hours + ":" + minutes + ":" + seconds;
+  return `${hours}:${minutes}:${seconds}`;
 };
 
 const welcomeHandler = function (message) {
@@ -67,7 +67,7 @@ const submitSearch = function (file_path) {
         "Content-Length": contentLength,
         "Content-Type": "application/x-www-form-urlencoded"
       },
-      uri: "https://whatanime.ga/api/search?token=" + config.whatanime_token,
+      uri: `https://whatanime.ga/api/search?token=${config.whatanime_token}`,
       body: formData,
       method: "POST"
     })
@@ -89,16 +89,16 @@ const submitSearch = function (file_path) {
             } = searchResult.docs[0];
             let text = "";
             if (similarity < 0.92) {
-              text = "I have low confidence on this, wild guess:" + "\n";
+              text = "I have low confidence on this, wild guess:\n";
             }
             text += "```";
-            text += title + "\n";
-            text += title_chinese + "\n";
-            text += title_english + "\n";
-            text += "EP#" + zeroPad(episode, 2) + " " + formatTime(at) + "\n";
-            text += "" + (similarity * 100).toFixed(1) + "% similarity";
+            text += `${title}\n`;
+            text += `${title_chinese}\n`;
+            text += `${title_english}\n`;
+            text += `EP#${zeroPad(episode, 2)} ${formatTime(at)}\n`;
+            text += `${(similarity * 100).toFixed(1)}% similarity`;
             text += "```";
-            const videoLink = "https://whatanime.ga/preview.php?season=" + encodeURIComponent(season) + "&anime=" + encodeURIComponent(anime) + "&file=" + encodeURIComponent(filename) + "&t=" + (at) + "&token=" + tokenthumb;
+            const videoLink = `https://whatanime.ga/preview.php?season=${encodeURIComponent(season)}&anime=${encodeURIComponent(anime)}&file=${encodeURIComponent(filename)}&t=${at}&token=${tokenthumb}`;
             resolve({text: text, video: videoLink});
           } else {
             resolve({text: "Sorry, I don't know what anime is it :\\"});
@@ -139,10 +139,10 @@ const messageHandler = function (message) {
     if (getImageFromMessage(message)) {
       bot.sendMessage(message.chat.id, "Downloading the image...", {reply_to_message_id: message.message_id, parse_mode: "Markdown"})
         .then(function (bot_message) {
-          request("https://api.telegram.org/bot" + token + "/getFile?file_id=" + getImageFromMessage(message).file_id)
+          request(`https://api.telegram.org/bot${token}/getFile?file_id=${getImageFromMessage(message).file_id}`)
             .then(function (response) {
-              const file_path = path.resolve(upload_dir, (new Date).getTime() + ".jpg");
-              request("https://api.telegram.org/file/bot" + token + "/" + JSON.parse(response.body).result.file_path)
+              const file_path = path.resolve(upload_dir, `${(new Date).getTime()}.jpg`);
+              request(`https://api.telegram.org/file/bot${token}/${JSON.parse(response.body).result.file_path}`)
                 .pipe(fs.createWriteStream(file_path))
                 .on("close", function () {
                   bot.editMessageText("Downloading the image...searching...", {chat_id: bot_message.chat.id, message_id: bot_message.message_id, parse_mode: "Markdown"});
@@ -165,10 +165,10 @@ const messageHandler = function (message) {
 
   } else if ((message.chat.type === "group" || message.chat.type === "supergroup") && messageIsMentioningBot(message)) {
     if (message.reply_to_message && getImageFromMessage(message.reply_to_message)) {
-      request("https://api.telegram.org/bot" + token + "/getFile?file_id=" + getImageFromMessage(message.reply_to_message).file_id)
+      request(`https://api.telegram.org/bot${token}/getFile?file_id=${getImageFromMessage(message.reply_to_message).file_id}`)
         .then(function (response) {
-          const file_path = path.resolve(upload_dir, (new Date).getTime() + ".jpg");
-          request("https://api.telegram.org/file/bot" + token + "/" + JSON.parse(response.body).result.file_path)
+          const file_path = path.resolve(upload_dir, `${(new Date).getTime()}.jpg`);
+          request(`https://api.telegram.org/file/bot${token}/${JSON.parse(response.body).result.file_path}`)
             .pipe(fs.createWriteStream(file_path))
             .on("close", function () {
               submitSearch(file_path)

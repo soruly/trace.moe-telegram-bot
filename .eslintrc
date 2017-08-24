@@ -12,6 +12,9 @@
   },
   "globals": {},
   "rules": {
+    "prefer-template": ["error"],
+    "template-tag-spacing": ["error"],
+    "template-curly-spacing": ["error"],
     "quotes": ["error"],
     "no-prototype-builtins": ["error"],
     "no-template-curly-in-string": ["warn"],
