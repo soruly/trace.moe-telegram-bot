@@ -109,36 +109,53 @@ const messageIsMentioningBot = (message) =>
     .length >= 1
     : false;
 
+// The return type is PhotoSize
+// https://core.telegram.org/bots/api#photosize
+const getImageFromMessage = function (message) {
+  if (message.photo) {
+    return message.photo.pop(); // get the last (largest) photo
+  }
+  if (message.document && message.document.thumb) {
+    return message.document.thumb;
+  }
+  if (message.video && message.video.thumb) {
+    return message.video.thumb;
+  }
+  return false;
+};
+
 const messageHandler = function (message) {
-  if (message.chat.type === 'private' && message.photo) {
-    bot.sendMessage(message.chat.id, "Downloading the image...", {reply_to_message_id: message.message_id, parse_mode: 'Markdown'})
-      .then(function (bot_message) {
-        const largest_file = message.photo.pop();
-        request('https://api.telegram.org/bot' + token + '/getFile?file_id=' + largest_file.file_id)
-          .then(function (response) {
-            const file_path = path.resolve(upload_dir, (new Date).getTime() + '.jpg');
-            request('https://api.telegram.org/file/bot' + token + '/' + JSON.parse(response.body).result.file_path)
-              .pipe(fs.createWriteStream(file_path))
-              .on('close', function () {
-                bot.editMessageText("Downloading your image...searching...", {chat_id: bot_message.chat.id, message_id: bot_message.message_id, parse_mode: 'Markdown'});
-                submitSearch(file_path)
-                  .then(function (result) {
-                    bot.editMessageText(result.text, {chat_id: bot_message.chat.id, message_id: bot_message.message_id, parse_mode: 'Markdown'});
-                    if (result.video) {
-                      bot.sendVideo(message.chat.id, result.video);
-                    }
-                  })
-                  .catch(function (error) {
-                    console.log(error);
-                  });
-              });
-          });
-      });
+  if (message.chat.type === 'private') {
+    if (getImageFromMessage(message)) {
+      bot.sendMessage(message.chat.id, "Downloading the image...", {reply_to_message_id: message.message_id, parse_mode: 'Markdown'})
+        .then(function (bot_message) {
+          request('https://api.telegram.org/bot' + token + '/getFile?file_id=' + getImageFromMessage(message).file_id)
+            .then(function (response) {
+              const file_path = path.resolve(upload_dir, (new Date).getTime() + '.jpg');
+              request('https://api.telegram.org/file/bot' + token + '/' + JSON.parse(response.body).result.file_path)
+                .pipe(fs.createWriteStream(file_path))
+                .on('close', function () {
+                  bot.editMessageText("Downloading the image...searching...", {chat_id: bot_message.chat.id, message_id: bot_message.message_id, parse_mode: 'Markdown'});
+                  submitSearch(file_path)
+                    .then(function (result) {
+                      bot.editMessageText(result.text, {chat_id: bot_message.chat.id, message_id: bot_message.message_id, parse_mode: 'Markdown'});
+                      if (result.video) {
+                        bot.sendVideo(message.chat.id, result.video);
+                      }
+                    })
+                    .catch(function (error) {
+                      console.log(error);
+                    });
+                });
+            });
+        });
+    } else {
+      bot.sendMessage(message.from.id, "You can Send / Forward anime screenshots to me. I can't get images from URLs, please send the image directly to me ;)");
+    }
 
   } else if ((message.chat.type === 'group' || message.chat.type === 'supergroup') && messageIsMentioningBot(message)) {
-    if (message.reply_to_message && message.reply_to_message.photo) {
-      const largest_file = message.reply_to_message.photo.pop();
-      request('https://api.telegram.org/bot' + token + '/getFile?file_id=' + largest_file.file_id)
+    if (message.reply_to_message && getImageFromMessage(message.reply_to_message)) {
+      request('https://api.telegram.org/bot' + token + '/getFile?file_id=' + getImageFromMessage(message.reply_to_message).file_id)
         .then(function (response) {
           const file_path = path.resolve(upload_dir, (new Date).getTime() + '.jpg');
           request('https://api.telegram.org/file/bot' + token + '/' + JSON.parse(response.body).result.file_path)
@@ -157,7 +174,7 @@ const messageHandler = function (message) {
             });
         });
     } else {
-      bot.sendMessage(message.chat.id, 'Mention me in a photo, I will tell you what anime is that', {reply_to_message_id: message.message_id});
+      bot.sendMessage(message.chat.id, 'Mention me in an anime screenshot, I will tell you what anime is that', {reply_to_message_id: message.message_id});
     }
   }
 };
