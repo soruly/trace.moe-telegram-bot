@@ -12,6 +12,7 @@
   },
   "globals": {},
   "rules": {
+    "quotes": ["error"],
     "no-prototype-builtins": ["error"],
     "no-template-curly-in-string": ["warn"],
     "no-unsafe-negation": ["error"],
