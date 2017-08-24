@@ -111,7 +111,7 @@ const messageIsMentioningBot = (message) =>
 
 const messageHandler = function (message) {
   if (message.chat.type === 'private' && message.photo) {
-    bot.sendMessage(message.chat.id, "Downloading your image...", {reply_to_message_id: message.message_id, parse_mode: 'Markdown'})
+    bot.sendMessage(message.chat.id, "Downloading the image...", {reply_to_message_id: message.message_id, parse_mode: 'Markdown'})
       .then(function (bot_message) {
         const largest_file = message.photo.pop();
         request('https://api.telegram.org/bot' + token + '/getFile?file_id=' + largest_file.file_id)
