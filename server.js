@@ -75,20 +75,30 @@ const submitSearch = function (file_path) {
         const searchResult = JSON.parse(response.body);
         if (searchResult.docs) {
           if (searchResult.docs.length > 0) {
-            const src = searchResult.docs[0];
-            const similarity = (src.similarity * 100).toFixed(1);
+            const {
+              similarity,
+              title,
+              title_english,
+              title_chinese,
+              season,
+              anime,
+              filename,
+              episode,
+              at,
+              tokenthumb
+            } = searchResult.docs[0];
             let text = "";
-            if (src.similarity < 0.92) {
+            if (similarity < 0.92) {
               text = "I have low confidence on this, wild guess:" + "\n";
             }
             text += "```";
-            text += src.title + "\n";
-            text += src.title_chinese + "\n";
-            text += src.title_english + "\n";
-            text += "EP#" + zeroPad(src.episode, 2) + " " + formatTime(src.at) + "\n";
-            text += "" + similarity + "% similarity";
+            text += title + "\n";
+            text += title_chinese + "\n";
+            text += title_english + "\n";
+            text += "EP#" + zeroPad(episode, 2) + " " + formatTime(at) + "\n";
+            text += "" + (similarity * 100).toFixed(1) + "% similarity";
             text += "```";
-            const videoLink = "https://whatanime.ga/preview.php?season=" + encodeURIComponent(src.season) + "&anime=" + encodeURIComponent(src.anime) + "&file=" + encodeURIComponent(src.filename) + "&t=" + (src.at) + "&token=" + src.tokenthumb;
+            const videoLink = "https://whatanime.ga/preview.php?season=" + encodeURIComponent(season) + "&anime=" + encodeURIComponent(anime) + "&file=" + encodeURIComponent(filename) + "&t=" + (at) + "&token=" + tokenthumb;
             resolve({text: text, video: videoLink});
           } else {
             resolve({text: "Sorry, I don't know what anime is it :\\"});
