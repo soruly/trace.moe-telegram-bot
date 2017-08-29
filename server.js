@@ -157,8 +157,12 @@ const messageHandler = function (message) {
                 .on("close", function () {
                   bot.editMessageText("Downloading the image...searching...", {chat_id: bot_message.chat.id, message_id: bot_message.message_id, parse_mode: "Markdown"});
                   bot.sendChatAction(message.chat.id, "typing");
+                  const chatAction_handler = setInterval(()=>{
+                    bot.sendChatAction(message.chat.id, "typing");
+                  }, 4000);
                   submitSearch(file_path)
                     .then(function (result) {
+                      clearInterval(chatAction_handler);
                       bot.editMessageText(result.text, {chat_id: bot_message.chat.id, message_id: bot_message.message_id, parse_mode: "Markdown"});
                       if (result.video) {
                         bot.sendChatAction(message.chat.id, "upload_video");
@@ -188,8 +192,12 @@ const messageHandler = function (message) {
               .pipe(fs.createWriteStream(file_path))
               .on("close", function () {
                 bot.sendChatAction(message.chat.id, "typing");
+                const chatAction_handler = setInterval(()=>{
+                  bot.sendChatAction(message.chat.id, "typing");
+                }, 4000);
                 submitSearch(file_path)
                   .then(function (result) {
+                    clearInterval(chatAction_handler);
                     bot.sendMessage(message.chat.id, result.text, {reply_to_message_id: responding_message.message_id, parse_mode: "Markdown"});
                     if (result.video) {
                       bot.sendChatAction(message.chat.id, "upload_video");
