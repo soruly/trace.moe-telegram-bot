@@ -111,13 +111,20 @@ const submitSearch = function (file_path) {
   });
 };
 
-const messageIsMentioningBot = (message) =>
-  message.entities ? message.entities
-    .filter(entity => entity.type === "mention")
-    .map(entity => message.text.substr(entity.offset, entity.length))
-    .filter(entity => entity === `@${config.username}`)
-    .length >= 1
-    : false;
+const messageIsMentioningBot = (message) => {
+  if (message.entities) {
+    return message.entities
+      .filter(entity => entity.type === "mention")
+      .map(entity => message.text.substr(entity.offset, entity.length))
+      .filter(entity => entity === `@${config.username}`)
+      .length >= 1;
+  }
+  if (message.caption) {
+    // Telegram does not provide entities when mentioning the bot in photo caption
+    return message.caption === `@${config.username}`;
+  }
+  return false;
+};
 
 // The return type is PhotoSize
 // https://core.telegram.org/bots/api#photosize
@@ -168,32 +175,36 @@ const messageHandler = function (message) {
       bot.sendMessage(message.from.id, "You can Send / Forward anime screenshots to me. I can't get images from URLs, please send the image directly to me ;)");
     }
 
-  } else if ((message.chat.type === "group" || message.chat.type === "supergroup") && messageIsMentioningBot(message)) {
-    if (message.reply_to_message && getImageFromMessage(message.reply_to_message)) {
+  } else if ((message.chat.type === "group" || message.chat.type === "supergroup")) {
+    if (messageIsMentioningBot(message)) {
       bot.sendChatAction(message.chat.id, "typing");
-      request(`https://api.telegram.org/bot${token}/getFile?file_id=${getImageFromMessage(message.reply_to_message).file_id}`)
-        .then(function (response) {
-          bot.sendChatAction(message.chat.id, "typing");
-          const file_path = path.resolve(upload_dir, `${(new Date).getTime()}.jpg`);
-          request(`https://api.telegram.org/file/bot${token}/${JSON.parse(response.body).result.file_path}`)
-            .pipe(fs.createWriteStream(file_path))
-            .on("close", function () {
-              bot.sendChatAction(message.chat.id, "typing");
-              submitSearch(file_path)
-                .then(function (result) {
-                  bot.sendMessage(message.chat.id, result.text, {reply_to_message_id: message.reply_to_message.message_id, parse_mode: "Markdown"});
-                  if (result.video) {
-                    bot.sendChatAction(message.chat.id, "upload_video");
-                    bot.sendVideo(message.chat.id, result.video, {reply_to_message_id: message.reply_to_message.message_id});
-                  }
-                })
-                .catch(function (error) {
-                  console.log(error);
-                });
-            });
-        });
-    } else {
-      bot.sendMessage(message.chat.id, "Mention me in an anime screenshot, I will tell you what anime is that", {reply_to_message_id: message.message_id});
+      const responding_message = message.reply_to_message ? message.reply_to_message : message;
+      if (getImageFromMessage(responding_message)) {
+        request(`https://api.telegram.org/bot${token}/getFile?file_id=${getImageFromMessage(responding_message).file_id}`)
+          .then(function (response) {
+            bot.sendChatAction(message.chat.id, "typing");
+            const file_path = path.resolve(upload_dir, `${(new Date).getTime()}.jpg`);
+            request(`https://api.telegram.org/file/bot${token}/${JSON.parse(response.body).result.file_path}`)
+              .pipe(fs.createWriteStream(file_path))
+              .on("close", function () {
+                bot.sendChatAction(message.chat.id, "typing");
+                submitSearch(file_path)
+                  .then(function (result) {
+                    bot.sendMessage(message.chat.id, result.text, {reply_to_message_id: responding_message.message_id, parse_mode: "Markdown"});
+                    if (result.video) {
+                      bot.sendChatAction(message.chat.id, "upload_video");
+                      bot.sendVideo(message.chat.id, result.video, {reply_to_message_id: responding_message.message_id});
+                    }
+                  })
+                  .catch(function (error) {
+                    console.log(error);
+                  });
+              });
+          });
+      } else {
+        // cannot find image from the message mentioning the bot
+        bot.sendMessage(message.chat.id, "Mention me in an anime screenshot, I will tell you what anime is that", {reply_to_message_id: message.message_id});
+      }
     }
   }
 };
