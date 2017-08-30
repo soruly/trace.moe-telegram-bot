@@ -91,12 +91,12 @@ const submitSearch = function (file_path) {
             if (similarity < 0.92) {
               text = "I have low confidence on this, wild guess:\n";
             }
-            text += "```";
+            text += "```\n";
             text += `${title}\n`;
             text += `${title_chinese}\n`;
             text += `${title_english}\n`;
             text += `EP#${zeroPad(episode, 2)} ${formatTime(at)}\n`;
-            text += `${(similarity * 100).toFixed(1)}% similarity`;
+            text += `${(similarity * 100).toFixed(1)}% similarity\n`;
             text += "```";
             const videoLink = `https://whatanime.ga/preview.php?season=${encodeURIComponent(season)}&anime=${encodeURIComponent(anime)}&file=${encodeURIComponent(filename)}&t=${at}&token=${tokenthumb}`;
             resolve({text: text, video: videoLink});
