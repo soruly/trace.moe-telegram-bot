@@ -170,6 +170,7 @@ const messageHandler = function (message) {
                       }
                     })
                     .catch(function (error) {
+                      clearInterval(chatAction_handler);
                       console.log(error);
                     });
                 });
@@ -205,6 +206,7 @@ const messageHandler = function (message) {
                     }
                   })
                   .catch(function (error) {
+                    clearInterval(chatAction_handler);
                     console.log(error);
                   });
               });
