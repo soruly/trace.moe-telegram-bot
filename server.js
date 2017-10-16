@@ -171,6 +171,7 @@ const messageHandler = function (message) {
                     })
                     .catch(function (error) {
                       clearInterval(chatAction_handler);
+                      bot.editMessageText("Server error", {chat_id: bot_message.chat.id, message_id: bot_message.message_id, parse_mode: "Markdown"});
                       console.log(error);
                     });
                 });
