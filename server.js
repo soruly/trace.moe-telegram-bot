@@ -36,19 +36,9 @@ const zeroPad = function (n, width, z) {
 
 const formatTime = function (timeInSeconds) {
   const sec_num = parseInt(timeInSeconds, 10);
-  let hours = Math.floor(sec_num / 3600);
-  let minutes = Math.floor((sec_num - (hours * 3600)) / 60);
-  let seconds = sec_num - (hours * 3600) - (minutes * 60);
-
-  if (hours < 10) {
-    hours = `0${hours}`;
-  }
-  if (minutes < 10) {
-    minutes = `0${minutes}`;
-  }
-  if (seconds < 10) {
-    seconds = `0${seconds}`;
-  }
+  const hours = Math.floor(sec_num / 3600).toString().padStart(2, "0");
+  const minutes = Math.floor((sec_num - (hours * 3600)) / 60).toString().padStart(2, "0");
+  const seconds = (sec_num - (hours * 3600) - (minutes * 60)).toString().padStart(2, "0");
 
   return `${hours}:${minutes}:${seconds}`;
 };
