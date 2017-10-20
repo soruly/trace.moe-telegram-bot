@@ -28,12 +28,6 @@ bot.getMe().then(function (result) {
   console.log(result);
 });
 
-const zeroPad = function (n, width, z) {
-  z = z || "0";
-  n = `${n}`;
-  return n.length >= width ? n : new Array(width - n.length + 1).join(z) + n;
-};
-
 const formatTime = function (timeInSeconds) {
   const sec_num = parseInt(timeInSeconds, 10);
   const hours = Math.floor(sec_num / 3600).toString().padStart(2, "0");
@@ -85,7 +79,7 @@ const submitSearch = function (file_path) {
             text += `${title}\n`;
             text += `${title_chinese}\n`;
             text += `${title_english}\n`;
-            text += `EP#${zeroPad(episode, 2)} ${formatTime(at)}\n`;
+            text += `EP#${episode.toString().padStart(2, "0")} ${formatTime(at)}\n`;
             text += `${(similarity * 100).toFixed(1)}% similarity\n`;
             text += "```";
             const videoLink = `https://whatanime.ga/preview.php?season=${encodeURIComponent(season)}&anime=${encodeURIComponent(anime)}&file=${encodeURIComponent(filename)}&t=${at}&token=${tokenthumb}`;
