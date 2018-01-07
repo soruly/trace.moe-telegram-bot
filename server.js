@@ -56,37 +56,41 @@ const submitSearch = function (file_path) {
       method: "POST"
     })
       .then(function (response) {
-        const searchResult = JSON.parse(response.body);
-        if (searchResult.docs) {
-          if (searchResult.docs.length > 0) {
-            const {
-              similarity,
-              title,
-              title_english,
-              title_chinese,
-              season,
-              anime,
-              filename,
-              episode,
-              at,
-              tokenthumb
-            } = searchResult.docs[0];
-            let text = "";
-            if (similarity < 0.92) {
-              text = "I have low confidence in this, wild guess:\n";
+        try{
+          const searchResult = JSON.parse(response.body);
+          if (searchResult.docs) {
+            if (searchResult.docs.length > 0) {
+              const {
+                similarity,
+                title,
+                title_english,
+                title_chinese,
+                season,
+                anime,
+                filename,
+                episode,
+                at,
+                tokenthumb
+              } = searchResult.docs[0];
+              let text = "";
+              if (similarity < 0.92) {
+                text = "I have low confidence in this, wild guess:\n";
+              }
+              text += "```\n";
+              text += `${title}\n`;
+              text += `${title_chinese}\n`;
+              text += `${title_english}\n`;
+              text += `EP#${episode.toString().padStart(2, "0")} ${formatTime(at)}\n`;
+              text += `${(similarity * 100).toFixed(1)}% similarity\n`;
+              text += "```";
+              const videoLink = `https://whatanime.ga/preview.php?season=${encodeURIComponent(season)}&anime=${encodeURIComponent(anime)}&file=${encodeURIComponent(filename)}&t=${at}&token=${tokenthumb}`;
+              resolve({text: text, video: videoLink});
+            } else {
+              resolve({text: "Sorry, I don't know what anime is it :\\"});
             }
-            text += "```\n";
-            text += `${title}\n`;
-            text += `${title_chinese}\n`;
-            text += `${title_english}\n`;
-            text += `EP#${episode.toString().padStart(2, "0")} ${formatTime(at)}\n`;
-            text += `${(similarity * 100).toFixed(1)}% similarity\n`;
-            text += "```";
-            const videoLink = `https://whatanime.ga/preview.php?season=${encodeURIComponent(season)}&anime=${encodeURIComponent(anime)}&file=${encodeURIComponent(filename)}&t=${at}&token=${tokenthumb}`;
-            resolve({text: text, video: videoLink});
-          } else {
-            resolve({text: "Sorry, I don't know what anime is it :\\"});
           }
+        } catch (e) {
+          resolve({text: "Backend server error, please try again later."});
         }
       })
       .catch(function (error) {
