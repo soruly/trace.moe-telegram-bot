@@ -56,7 +56,7 @@ const submitSearch = function (file_path) {
       method: "POST"
     })
       .then(function (response) {
-        try{
+        try {
           const searchResult = JSON.parse(response.body);
           if (searchResult.docs) {
             if (searchResult.docs.length > 0) {
