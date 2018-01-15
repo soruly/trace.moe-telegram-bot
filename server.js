@@ -78,8 +78,13 @@ const submitSearch = function (file_path) {
               }
               text += "```\n";
               text += `${title}\n`;
-              text += `${title_chinese}\n`;
-              text += `${title_english}\n`;
+              if (title_chinese.toLowerCase() !== title.toLowerCase()) {
+                text += `${title_chinese}\n`;
+              }
+              if (title_english.toLowerCase() !== title.toLowerCase()
+               && title_english.toLowerCase() !== title_chinese.toLowerCase()) {
+                text += `${title_english}\n`;
+              }
               text += `EP#${episode.toString().padStart(2, "0")} ${formatTime(at)}\n`;
               text += `${(similarity * 100).toFixed(1)}% similarity\n`;
               text += "```";
