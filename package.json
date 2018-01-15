@@ -9,8 +9,8 @@
   "author": "soruly",
   "license": "MIT",
   "dependencies": {
-    "datauri": "^1.0.5",
-    "node-telegram-bot-api": "^0.29.0",
-    "requestretry": "^1.12.2"
+    "datauri": "1.0.5",
+    "node-telegram-bot-api": "0.30.0",
+    "requestretry": "1.12.2"
   }
 }
