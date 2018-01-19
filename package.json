@@ -11,6 +11,6 @@
   "dependencies": {
     "datauri": "1.0.5",
     "node-telegram-bot-api": "0.30.0",
-    "requestretry": "1.12.2"
+    "requestretry": "1.13.0"
   }
 }
