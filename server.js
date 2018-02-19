@@ -78,10 +78,10 @@ const submitSearch = function (file_path) {
               }
               text += "```\n";
               text += `${title}\n`;
-              if (title_chinese.toLowerCase() !== title.toLowerCase()) {
+              if (title_chinese && title_chinese.toLowerCase() !== title.toLowerCase()) {
                 text += `${title_chinese}\n`;
               }
-              if (title_english.toLowerCase() !== title.toLowerCase()
+              if (title_english && title_english.toLowerCase() !== title.toLowerCase()
                && title_english.toLowerCase() !== title_chinese.toLowerCase()) {
                 text += `${title_english}\n`;
               }
