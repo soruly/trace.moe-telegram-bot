@@ -65,6 +65,7 @@ const submitSearch = function (file_path) {
                 title,
                 title_english,
                 title_chinese,
+                title_romaji,
                 season,
                 anime,
                 filename,
@@ -77,14 +78,16 @@ const submitSearch = function (file_path) {
                 text = "I have low confidence in this, wild guess:\n";
               }
               text += "```\n";
-              text += `${title}\n`;
-              if (title_chinese && title_chinese.toLowerCase() !== title.toLowerCase()) {
-                text += `${title_chinese}\n`;
-              }
-              if (title_english && title_english.toLowerCase() !== title.toLowerCase()
-               && title_english.toLowerCase() !== title_chinese.toLowerCase()) {
-                text += `${title_english}\n`;
-              }
+              text += [
+                title,
+                title_chinese,
+                title_romaji,
+                title_english
+              ].reduce(
+                (acc, cur) => acc.map(e => e.toLowerCase()).includes(cur.toLowerCase()) ? acc : [...acc, cur],
+                []
+              ).join("\n");
+              text += "\n";
               text += `EP#${episode.toString().padStart(2, "0")} ${formatTime(at)}\n`;
               text += `${(similarity * 100).toFixed(1)}% similarity\n`;
               text += "```";
