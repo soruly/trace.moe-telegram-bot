@@ -83,7 +83,7 @@ const submitSearch = function (file_path) {
                 title_chinese,
                 title_romaji,
                 title_english
-              ].reduce(
+              ].filter(e=>e).reduce(
                 (acc, cur) => acc.map(e => e.toLowerCase()).includes(cur.toLowerCase()) ? acc : [...acc, cur],
                 []
               ).join("\n");
