@@ -1,6 +1,7 @@
 # whatanime.ga-telegram-bot
 [![](https://david-dm.org/soruly/whatanime.ga-telegram-bot/status.svg)](https://david-dm.org/soruly/whatanime.ga-telegram-bot)
 [![license](https://img.shields.io/github/license/soruly/whatanime.ga-WebExtension.svg?maxAge=86400)](https://raw.githubusercontent.com/soruly/whatanime.ga-WebExtension/master/LICENSE)
+[![Discord](https://img.shields.io/discord/437578425767559188.svg)](https://discord.gg/K9jn6Kj)
 [![Donate](https://img.shields.io/badge/donate-patreon-orange.svg)](https://www.patreon.com/soruly)
 
 This Telegram Bot can tell the anime when you send an screenshot to it
