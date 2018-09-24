@@ -54,62 +54,67 @@ const submitSearch = (file_path) => new Promise(async (resolve, reject) => {
   } catch (error) {
     reject(error);
   }
+  if (parseInt(response.headers["x-whatanime-quota"], 10) === 0) {
+    resolve({text: "Search quota exceeded, please try again later."});
+    return;
+  }
   let searchResult = {};
   try {
     searchResult = JSON.parse(response.body);
   } catch (e) {
     resolve({text: "Backend server error, please try again later."});
+    return;
   }
 
   if (searchResult.docs && searchResult.docs.length <= 0) {
     resolve({text: "Sorry, I don't know what anime is it :\\"});
-  } else {
-    const {
-      similarity,
-      title,
-      title_english,
-      title_chinese,
-      title_romaji,
-      anilist_id,
-      filename,
-      episode,
-      at,
-      tokenthumb
-    } = searchResult.docs[0];
-    let text = "";
-    if (similarity < 0.92) {
-      text = "I have low confidence in this, wild guess:\n";
-    }
-    text += "```\n";
-    text += [
-      title,
-      title_chinese,
-      title_romaji,
-      title_english
-    ].filter((e) => e).reduce( // deduplicate titles
-      (acc, cur) => acc.map((e) => e.toLowerCase()).includes(cur.toLowerCase()) ? acc : [
-        ...acc,
-        cur
-      ],
-      []
-    )
-      .join("\n");
-    text += "\n";
-    text += `EP#${episode.toString().padStart(2, "0")} ${formatTime(at)}\n`;
-    text += `${(similarity * 100).toFixed(1)}% similarity\n`;
-    text += "```";
-    const videoLink = [
-      "https://whatanime.ga/preview.php?",
-      `anilist_id=${anilist_id}`,
-      `file=${encodeURIComponent(filename)}`,
-      `t=${at}`,
-      `token=${tokenthumb}`
-    ].join("&");
-    resolve({
-      text,
-      video: videoLink
-    });
+    return;
   }
+  const {
+    similarity,
+    title,
+    title_english,
+    title_chinese,
+    title_romaji,
+    anilist_id,
+    filename,
+    episode,
+    at,
+    tokenthumb
+  } = searchResult.docs[0];
+  let text = "";
+  if (similarity < 0.92) {
+    text = "I have low confidence in this, wild guess:\n";
+  }
+  text += "```\n";
+  text += [
+    title,
+    title_chinese,
+    title_romaji,
+    title_english
+  ].filter((e) => e).reduce( // deduplicate titles
+    (acc, cur) => acc.map((e) => e.toLowerCase()).includes(cur.toLowerCase()) ? acc : [
+      ...acc,
+      cur
+    ],
+    []
+  )
+    .join("\n");
+  text += "\n";
+  text += `EP#${episode.toString().padStart(2, "0")} ${formatTime(at)}\n`;
+  text += `${(similarity * 100).toFixed(1)}% similarity\n`;
+  text += "```";
+  const videoLink = [
+    "https://whatanime.ga/preview.php?",
+    `anilist_id=${anilist_id}`,
+    `file=${encodeURIComponent(filename)}`,
+    `t=${at}`,
+    `token=${tokenthumb}`
+  ].join("&");
+  resolve({
+    text,
+    video: videoLink
+  });
 });
 
 const messageIsMentioningBot = (message) => {
