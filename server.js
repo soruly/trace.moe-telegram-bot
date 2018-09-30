@@ -1,8 +1,9 @@
 const TelegramBot = require("node-telegram-bot-api");
-const request = require("requestretry");
+const fetch = require("node-fetch");
 const querystring = require("querystring");
 const fs = require("fs");
 const path = require("path");
+const util = require("util");
 const Datauri = require("datauri");
 
 const {
@@ -42,25 +43,25 @@ const submitSearch = (file_path) => new Promise(async (resolve, reject) => {
   const contentLength = formData.length;
   let response = {};
   try {
-    response = await request({
-      headers: {
-        "Content-Length": contentLength,
-        "Content-Type": "application/x-www-form-urlencoded"
-      },
-      uri: `https://whatanime.ga/api/search?token=${whatanime_token}`,
-      body: formData,
-      method: "POST"
-    });
+    response = await fetch(
+      `https://whatanime.ga/api/search?token=${whatanime_token}`, {
+        headers: {
+          "Content-Length": contentLength,
+          "Content-Type": "application/x-www-form-urlencoded"
+        },
+        body: formData,
+        method: "POST"
+      });
   } catch (error) {
     reject(error);
   }
-  if (parseInt(response.headers["x-whatanime-quota"], 10) === 0) {
+  if (parseInt(response.headers.get("x-whatanime-quota"), 10) === 0) {
     resolve({text: "Search quota exceeded, please try again later."});
     return;
   }
   let searchResult = {};
   try {
-    searchResult = JSON.parse(response.body);
+    searchResult = await response.json();
   } catch (e) {
     resolve({text: "Backend server error, please try again later."});
     return;
@@ -149,43 +150,61 @@ const getImageFromMessage = (message) => {
 
 const privateMessageHandler = async (message) => {
   if (!getImageFromMessage(message)) {
-    bot.sendMessage(message.from.id, "You can Send / Forward anime screenshots to me. I can't get images from URLs, please send the image directly to me ;)");
+    await bot.sendMessage(message.from.id, "You can Send / Forward anime screenshots to me. I can't get images from URLs, please send the image directly to me ;)");
     return;
   }
-  const bot_message = await bot.sendMessage(message.chat.id, "Downloading the image...", {
-    reply_to_message_id: message.message_id,
-    parse_mode: "Markdown"
-  });
-  const response = await request(`https://api.telegram.org/bot${token}/getFile?file_id=${getImageFromMessage(message).file_id}`);
   const file_path = path.resolve(upload_dir, `${(new Date()).getTime()}.jpg`);
-  request(`https://api.telegram.org/file/bot${token}/${JSON.parse(response.body).result.file_path}`)
-    .pipe(fs.createWriteStream(file_path))
-    .on("close", async () => {
+
+  const [
+    bot_message,
+    err
+  ] = await Promise.all([
+    bot.sendMessage(message.chat.id, "Downloading the image...", {
+      reply_to_message_id: message.message_id
+    }),
+    fetch(`https://api.telegram.org/bot${token}/getFile?file_id=${getImageFromMessage(message).file_id}`)
+      .then((res) => res.json())
+      .then((json) => fetch(`https://api.telegram.org/file/bot${token}/${json.result.file_path}`))
+      .then((res) => res.buffer())
+      .then((buffer) => util.promisify(fs.writeFile)(file_path, buffer))
+  ]);
+
+  if (err) {
+    await bot.editMessageText("Error downloading image", {
+      chat_id: bot_message.chat.id,
+      message_id: bot_message.message_id
+    });
+    return;
+  }
+
+  try {
+    const [
+      _,
+      result
+    ] = await Promise.all([
       bot.editMessageText("Downloading the image...searching...", {
         chat_id: bot_message.chat.id,
-        message_id: bot_message.message_id,
-        parse_mode: "Markdown"
-      });
-      try {
-        const result = await submitSearch(file_path);
-        bot.editMessageText(result.text, {
-          chat_id: bot_message.chat.id,
-          message_id: bot_message.message_id,
-          parse_mode: "Markdown"
-        });
-        if (result.video) {
-          bot.sendChatAction(message.chat.id, "upload_video");
-          bot.sendVideo(message.chat.id, result.video);
-        }
-      } catch (error) {
-        bot.editMessageText("Server error", {
-          chat_id: bot_message.chat.id,
-          message_id: bot_message.message_id,
-          parse_mode: "Markdown"
-        });
-        console.log(error);
-      }
+        message_id: bot_message.message_id
+      }),
+      submitSearch(file_path)
+    ]);
+    // better to send responses one-by-one
+    await bot.editMessageText(result.text, {
+      chat_id: bot_message.chat.id,
+      message_id: bot_message.message_id,
+      parse_mode: "Markdown"
     });
+    if (result.video) {
+      await bot.sendChatAction(message.chat.id, "upload_video");
+      await bot.sendVideo(message.chat.id, result.video);
+    }
+  } catch (error) {
+    await bot.editMessageText("Server error", {
+      chat_id: bot_message.chat.id,
+      message_id: bot_message.message_id
+    });
+    console.log(error);
+  }
 };
 
 const groupMessageHandler = async (message) => {
@@ -195,28 +214,37 @@ const groupMessageHandler = async (message) => {
   const responding_msg = message.reply_to_message ? message.reply_to_message : message;
   if (!getImageFromMessage(responding_msg)) {
     // cannot find image from the message mentioning the bot
-    bot.sendMessage(message.chat.id, "Mention me in an anime screenshot, I will tell you what anime is that", {reply_to_message_id: message.message_id});
+    await bot.sendMessage(message.chat.id, "Mention me in an anime screenshot, I will tell you what anime is that", {reply_to_message_id: message.message_id});
     return;
   }
-  const response = await request(`https://api.telegram.org/bot${token}/getFile?file_id=${getImageFromMessage(responding_msg).file_id}`);
   const file_path = path.resolve(upload_dir, `${(new Date()).getTime()}.jpg`);
-  request(`https://api.telegram.org/file/bot${token}/${JSON.parse(response.body).result.file_path}`)
-    .pipe(fs.createWriteStream(file_path))
-    .on("close", async () => {
-      try {
-        const result = await submitSearch(file_path);
-        bot.sendMessage(message.chat.id, result.text, {
-          reply_to_message_id: responding_msg.message_id,
-          parse_mode: "Markdown"
-        });
-        if (result.video) {
-          bot.sendChatAction(message.chat.id, "upload_video");
-          bot.sendVideo(message.chat.id, result.video, {reply_to_message_id: responding_msg.message_id});
-        }
-      } catch (error) {
-        console.log(error);
-      }
+
+  const err = await fetch(`https://api.telegram.org/bot${token}/getFile?file_id=${getImageFromMessage(responding_msg).file_id}`)
+    .then((res) => res.json())
+    .then((json) => fetch(`https://api.telegram.org/file/bot${token}/${json.result.file_path}`))
+    .then((res) => res.buffer())
+    .then((buffer) => util.promisify(fs.writeFile)(file_path, buffer));
+
+  if (err) {
+    await bot.sendMessage(message.chat.id, "Error downloading image", {
+      reply_to_message_id: responding_msg.message_id
     });
+    return;
+  }
+
+  try {
+    const result = await submitSearch(file_path);
+    await bot.sendMessage(message.chat.id, result.text, {
+      reply_to_message_id: responding_msg.message_id,
+      parse_mode: "Markdown"
+    });
+    if (result.video) {
+      await bot.sendChatAction(message.chat.id, "upload_video");
+      await bot.sendVideo(message.chat.id, result.video, {reply_to_message_id: responding_msg.message_id});
+    }
+  } catch (error) {
+    console.log(error);
+  }
 };
 
 const messageHandler = (message) => {
