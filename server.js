@@ -133,6 +133,13 @@ const messageIsMentioningBot = (message) => {
   return false;
 };
 
+const messageIsMute = (message) => {
+  if (message.caption) {
+    return message.caption.toLowerCase().indexOf("mute") >= 0;
+  }
+  return message.text && message.text.toLowerCase().indexOf("mute") >= 0;
+};
+
 // The return type is PhotoSize
 // https://core.telegram.org/bots/api#photosize
 const getImageFromMessage = (message) => {
@@ -195,8 +202,9 @@ const privateMessageHandler = async (message) => {
       parse_mode: "Markdown"
     });
     if (result.video) {
+      const videoLink = messageIsMute(message) ? `${result.video}&mute` : result.video;
       await bot.sendChatAction(message.chat.id, "upload_video");
-      await bot.sendVideo(message.chat.id, result.video);
+      await bot.sendVideo(message.chat.id, videoLink);
     }
   } catch (error) {
     await bot.editMessageText("Server error", {
@@ -239,8 +247,9 @@ const groupMessageHandler = async (message) => {
       parse_mode: "Markdown"
     });
     if (result.video) {
+      const videoLink = messageIsMute(message) ? `${result.video}&mute` : result.video;
       await bot.sendChatAction(message.chat.id, "upload_video");
-      await bot.sendVideo(message.chat.id, result.video, {reply_to_message_id: responding_msg.message_id});
+      await bot.sendVideo(message.chat.id, videoLink, {reply_to_message_id: responding_msg.message_id});
     }
   } catch (error) {
     console.log(error);
