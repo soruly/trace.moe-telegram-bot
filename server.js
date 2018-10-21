@@ -156,7 +156,8 @@ const getImageFromMessage = (message) => {
 };
 
 const privateMessageHandler = async (message) => {
-  if (!getImageFromMessage(message)) {
+  const responding_msg = message.reply_to_message ? message.reply_to_message : message;
+  if (!getImageFromMessage(responding_msg)) {
     await bot.sendMessage(message.from.id, "You can Send / Forward anime screenshots to me. I can't get images from URLs, please send the image directly to me ;)");
     return;
   }
@@ -167,9 +168,9 @@ const privateMessageHandler = async (message) => {
     err
   ] = await Promise.all([
     bot.sendMessage(message.chat.id, "Downloading the image...", {
-      reply_to_message_id: message.message_id
+      reply_to_message_id: responding_msg.message_id
     }),
-    fetch(`https://api.telegram.org/bot${token}/getFile?file_id=${getImageFromMessage(message).file_id}`)
+    fetch(`https://api.telegram.org/bot${token}/getFile?file_id=${getImageFromMessage(responding_msg).file_id}`)
       .then((res) => res.json())
       .then((json) => fetch(`https://api.telegram.org/file/bot${token}/${json.result.file_path}`))
       .then((res) => res.buffer())
