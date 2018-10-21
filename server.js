@@ -44,7 +44,7 @@ const submitSearch = (file_path) => new Promise(async (resolve, reject) => {
   let response = {};
   try {
     response = await fetch(
-      `https://whatanime.ga/api/search?token=${whatanime_token}`, {
+      `https://trace.moe/api/search?token=${whatanime_token}`, {
         headers: {
           "Content-Length": contentLength,
           "Content-Type": "application/x-www-form-urlencoded"
@@ -106,7 +106,7 @@ const submitSearch = (file_path) => new Promise(async (resolve, reject) => {
   text += `${(similarity * 100).toFixed(1)}% similarity\n`;
   text += "```";
   const videoLink = [
-    "https://whatanime.ga/preview.php?",
+    "https://trace.moe/preview.php?",
     `anilist_id=${anilist_id}`,
     `file=${encodeURIComponent(filename)}`,
     `t=${at}`,
