@@ -1,7 +1,7 @@
-# whatanime.ga-telegram-bot
-[![Build Status](https://travis-ci.org/soruly/whatanime.ga-telegram-bot.svg?branch=master)](https://travis-ci.org/soruly/whatanime.ga-telegram-bot)
-[![Dependencies](https://david-dm.org/soruly/whatanime.ga-telegram-bot/status.svg)](https://david-dm.org/soruly/whatanime.ga-telegram-bot)
-[![license](https://img.shields.io/github/license/soruly/whatanime.ga-WebExtension.svg)](https://raw.githubusercontent.com/soruly/whatanime.ga-WebExtension/master/LICENSE)
+# trace.moe-telegram-bot
+[![Build Status](https://travis-ci.org/soruly/trace.moe-telegram-bot.svg?branch=master)](https://travis-ci.org/soruly/trace.moe-telegram-bot)
+[![Dependencies](https://david-dm.org/soruly/trace.moe-telegram-bot/status.svg)](https://david-dm.org/soruly/trace.moe-telegram-bot)
+[![license](https://img.shields.io/github/license/soruly/trace.moe-WebExtension.svg)](https://raw.githubusercontent.com/soruly/trace.moe-WebExtension/master/LICENSE)
 [![Discord](https://img.shields.io/discord/437578425767559188.svg)](https://discord.gg/K9jn6Kj)
 [![Donate](https://img.shields.io/badge/donate-patreon-orange.svg)](https://www.patreon.com/soruly)
 
