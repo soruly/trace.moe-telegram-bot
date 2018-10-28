@@ -106,7 +106,7 @@ const submitSearch = (file_path) => new Promise(async (resolve, reject) => {
   text += `${(similarity * 100).toFixed(1)}% similarity\n`;
   text += "```";
   const videoLink = [
-    `https://media.trace.moe/video/${anilist_id}/${filename}?`,
+    `https://media.trace.moe/video/${anilist_id}/${encodeURIComponent(filename)}?`,
     `t=${at}&`,
     `token=${tokenthumb}`
   ].join("");
