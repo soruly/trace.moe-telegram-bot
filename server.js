@@ -106,12 +106,10 @@ const submitSearch = (file_path) => new Promise(async (resolve, reject) => {
   text += `${(similarity * 100).toFixed(1)}% similarity\n`;
   text += "```";
   const videoLink = [
-    "https://trace.moe/preview.php?",
-    `anilist_id=${anilist_id}`,
-    `file=${encodeURIComponent(filename)}`,
-    `t=${at}`,
+    `https://media.trace.moe/video/${anilist_id}/${filename}?`,
+    `t=${at}&`,
     `token=${tokenthumb}`
-  ].join("&");
+  ].join("");
   resolve({
     text,
     video: videoLink
