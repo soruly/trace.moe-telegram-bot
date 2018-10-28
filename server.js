@@ -116,6 +116,8 @@ const submitSearch = (file_path) => new Promise(async (resolve, reject) => {
   });
 });
 
+const isVideoValid = (url) => fetch(url).then((res) => res.status < 400);
+
 const messageIsMentioningBot = (message) => {
   if (message.entities) {
     return message.entities
@@ -200,7 +202,7 @@ const privateMessageHandler = async (message) => {
       message_id: bot_message.message_id,
       parse_mode: "Markdown"
     });
-    if (result.video) {
+    if (result.video && await isVideoValid(result.video)) {
       const videoLink = messageIsMute(message) ? `${result.video}&mute` : result.video;
       await bot.sendChatAction(message.chat.id, "upload_video");
       await bot.sendVideo(message.chat.id, videoLink);
@@ -245,7 +247,7 @@ const groupMessageHandler = async (message) => {
       reply_to_message_id: responding_msg.message_id,
       parse_mode: "Markdown"
     });
-    if (result.video) {
+    if (result.video && await isVideoValid(result.video)) {
       const videoLink = messageIsMute(message) ? `${result.video}&mute` : result.video;
       await bot.sendChatAction(message.chat.id, "upload_video");
       await bot.sendVideo(message.chat.id, videoLink, {reply_to_message_id: responding_msg.message_id});
