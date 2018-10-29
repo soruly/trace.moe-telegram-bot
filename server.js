@@ -1,3 +1,4 @@
+require("dotenv").config();
 const TelegramBot = require("node-telegram-bot-api");
 const fetch = require("node-fetch");
 const querystring = require("querystring");
@@ -7,11 +8,11 @@ const util = require("util");
 const Datauri = require("datauri");
 
 const {
-  port,
-  token,
-  webhook,
-  whatanime_token
-} = require("./config");
+  SERVER_PORT,
+  TELEGRAM_TOKEN,
+  TELEGRAM_WEBHOOK,
+  TRACE_MOE_TOKEN
+} = process.env;
 
 let bot_name = null;
 
@@ -20,8 +21,8 @@ if (!fs.existsSync(upload_dir)) {
   fs.mkdirSync(upload_dir);
 }
 
-const bot = new TelegramBot(token, {
-  webHook: {port},
+const bot = new TelegramBot(TELEGRAM_TOKEN, {
+  webHook: {port: SERVER_PORT},
   polling: false
 });
 
@@ -44,7 +45,7 @@ const submitSearch = (file_path) => new Promise(async (resolve, reject) => {
   let response = {};
   try {
     response = await fetch(
-      `https://trace.moe/api/search?token=${whatanime_token}`, {
+      `https://trace.moe/api/search?token=${TRACE_MOE_TOKEN}`, {
         headers: {
           "Content-Length": contentLength,
           "Content-Type": "application/x-www-form-urlencoded"
@@ -168,9 +169,9 @@ const privateMessageHandler = async (message) => {
     bot.sendMessage(message.chat.id, "Downloading the image...", {
       reply_to_message_id: responding_msg.message_id
     }),
-    fetch(`https://api.telegram.org/bot${token}/getFile?file_id=${getImageFromMessage(responding_msg).file_id}`)
+    fetch(`https://api.telegram.org/bot${TELEGRAM_TOKEN}/getFile?file_id=${getImageFromMessage(responding_msg).file_id}`)
       .then((res) => res.json())
-      .then((json) => fetch(`https://api.telegram.org/file/bot${token}/${json.result.file_path}`))
+      .then((json) => fetch(`https://api.telegram.org/file/bot${TELEGRAM_TOKEN}/${json.result.file_path}`))
       .then((res) => res.buffer())
       .then((buffer) => util.promisify(fs.writeFile)(file_path, buffer))
   ]);
@@ -226,9 +227,9 @@ const groupMessageHandler = async (message) => {
   }
   const file_path = path.resolve(upload_dir, `${(new Date()).getTime()}.jpg`);
 
-  const err = await fetch(`https://api.telegram.org/bot${token}/getFile?file_id=${getImageFromMessage(responding_msg).file_id}`)
+  const err = await fetch(`https://api.telegram.org/bot${TELEGRAM_TOKEN}/getFile?file_id=${getImageFromMessage(responding_msg).file_id}`)
     .then((res) => res.json())
-    .then((json) => fetch(`https://api.telegram.org/file/bot${token}/${json.result.file_path}`))
+    .then((json) => fetch(`https://api.telegram.org/file/bot${TELEGRAM_TOKEN}/${json.result.file_path}`))
     .then((res) => res.buffer())
     .then((buffer) => util.promisify(fs.writeFile)(file_path, buffer));
 
@@ -263,7 +264,7 @@ const messageHandler = (message) => {
   }
 };
 
-bot.setWebHook(webhook);
+bot.setWebHook(TELEGRAM_WEBHOOK);
 
 bot.onText(/\/start/, welcomeHandler);
 
