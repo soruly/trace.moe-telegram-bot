@@ -129,7 +129,7 @@ const messageIsMentioningBot = (message) => {
   }
   if (message.caption) {
     // Telegram does not provide entities when mentioning the bot in photo caption
-    return message.caption.toLowerCase() === `@${bot_name.toLowerCase()}`;
+    return message.caption.toLowerCase().indexOf(`@${bot_name.toLowerCase()}`) >= 0;
   }
   return false;
 };
