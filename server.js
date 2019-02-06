@@ -73,6 +73,7 @@ const submitSearch = (file_path) => new Promise(async (resolve, reject) => {
     return;
   }
   const {
+    is_adult,
     similarity,
     title,
     title_english,
@@ -112,6 +113,7 @@ const submitSearch = (file_path) => new Promise(async (resolve, reject) => {
     `token=${tokenthumb}`
   ].join("");
   resolve({
+    is_adult,
     text,
     video: videoLink
   });
@@ -242,6 +244,12 @@ const groupMessageHandler = async (message) => {
 
   try {
     const result = await submitSearch(file_path);
+    if (result.is_adult) {
+      await bot.sendMessage(message.chat.id, "I've found an adult result 😳\nPlease forward it to me via Private Chat 😏", {
+        reply_to_message_id: responding_msg.message_id
+      });
+      return;
+    }
     await bot.sendMessage(message.chat.id, result.text, {
       reply_to_message_id: responding_msg.message_id,
       parse_mode: "Markdown"
