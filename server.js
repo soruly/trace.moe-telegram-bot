@@ -67,7 +67,10 @@ const submitSearch = (file_path) => new Promise(async (resolve, reject) => {
     resolve({text: "Backend server error, please try again later."});
     return;
   }
-
+  if (!searchResult.docs) {
+    resolve({text: "Backend server error, please try again later."});
+    return;
+  }
   if (searchResult.docs && searchResult.docs.length <= 0) {
     resolve({text: "Sorry, I don't know what anime is it :\\"});
     return;
