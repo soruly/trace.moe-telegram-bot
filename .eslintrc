@@ -177,7 +177,7 @@
     "linebreak-style": ["error"],
     "lines-around-comment": ["error"],
     "max-depth": ["error"],
-    "max-lines": ["error"],
+    "max-lines": ["off"],
     "max-nested-callbacks": ["error"],
     "max-params": ["off"],
     "max-statements-per-line": ["error"],

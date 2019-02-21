@@ -6,13 +6,28 @@ const fs = require("fs");
 const path = require("path");
 const util = require("util");
 const Datauri = require("datauri");
+const redis = require("redis");
+const {promisify} = require("util");
+
 
 const {
   SERVER_PORT,
+  REDIS_HOST,
   TELEGRAM_TOKEN,
   TELEGRAM_WEBHOOK,
   TRACE_MOE_TOKEN
 } = process.env;
+
+let redisClient = null;
+let getAsync = null;
+let setAsync = null;
+let ttlAsync = null;
+if (REDIS_HOST) {
+  redisClient = redis.createClient({host: REDIS_HOST});
+  getAsync = promisify(redisClient.get).bind(redisClient);
+  setAsync = promisify(redisClient.set).bind(redisClient);
+  ttlAsync = promisify(redisClient.ttl).bind(redisClient);
+}
 
 let bot_name = null;
 
@@ -159,12 +174,38 @@ const getImageFromMessage = (message) => {
   return false;
 };
 
+const limitExceeded = async (message) => {
+  if (REDIS_HOST) {
+    let limit = await getAsync(`telegram_${message.from.id}_limit`);
+    const limitTTL = await ttlAsync(`telegram_${message.from.id}_limit`);
+    limit = limit === null ? 5 - 1 : limit - 1;
+    await setAsync(`telegram_${message.from.id}_limit`, limit, "EX", parseInt(limitTTL, 10) > 0 ? parseInt(limitTTL, 10) : 60);
+    if (limit < 0) {
+      return true;
+    }
+
+    let quota = await getAsync(`telegram_${message.from.id}_quota`);
+    const quotaTTL = await ttlAsync(`telegram_${message.from.id}_quota`);
+    quota = quota === null ? 50 - 1 : quota - 1;
+    await setAsync(`telegram_${message.from.id}_quota`, quota, "EX", parseInt(quotaTTL, 10) > 0 ? parseInt(quotaTTL, 10) : 86400);
+    if (quota < 0) {
+      return true;
+    }
+  }
+  return false;
+};
+
 const privateMessageHandler = async (message) => {
   const responding_msg = message.reply_to_message ? message.reply_to_message : message;
   if (!getImageFromMessage(responding_msg)) {
     await bot.sendMessage(message.from.id, "You can Send / Forward anime screenshots to me. I can't get images from URLs, please send the image directly to me ;)");
     return;
   }
+  if (await limitExceeded(message)) {
+    await bot.sendMessage(message.from.id, "Search limit exceeded, please try again later", {reply_to_message_id: responding_msg.message_id});
+    return;
+  }
+
   const file_path = path.resolve(upload_dir, `${(new Date()).getTime()}.jpg`);
 
   const [
@@ -186,7 +227,6 @@ const privateMessageHandler = async (message) => {
       chat_id: bot_message.chat.id,
       message_id: bot_message.message_id
     });
-    return;
   }
 
   try {
@@ -230,6 +270,12 @@ const groupMessageHandler = async (message) => {
     await bot.sendMessage(message.chat.id, "Mention me in an anime screenshot, I will tell you what anime is that", {reply_to_message_id: message.message_id});
     return;
   }
+
+  if (await limitExceeded(message)) {
+    await bot.sendMessage(message.chat.id, "Your search limit exceeded, please try again later", {reply_to_message_id: responding_msg.message_id});
+    return;
+  }
+
   const file_path = path.resolve(upload_dir, `${(new Date()).getTime()}.jpg`);
 
   const err = await fetch(`https://api.telegram.org/bot${TELEGRAM_TOKEN}/getFile?file_id=${getImageFromMessage(responding_msg).file_id}`)
