@@ -107,7 +107,6 @@ const submitSearch = (file_path) => new Promise(async (resolve, reject) => {
   if (similarity < 0.92) {
     text = "I have low confidence in this, wild guess:\n";
   }
-  text += "```\n";
   text += [
     title,
     title_chinese,
@@ -120,11 +119,11 @@ const submitSearch = (file_path) => new Promise(async (resolve, reject) => {
     ],
     []
   )
+    .map((t) => `\`${t}\``)
     .join("\n");
   text += "\n";
-  text += `EP#${episode.toString().padStart(2, "0")} ${formatTime(at)}\n`;
-  text += `${(similarity * 100).toFixed(1)}% similarity\n`;
-  text += "```";
+  text += `\`EP#${episode.toString().padStart(2, "0")} ${formatTime(at)}\`\n`;
+  text += `\`${(similarity * 100).toFixed(1)}% similarity\`\n`;
   const videoLink = [
     `https://media.trace.moe/video/${anilist_id}/${encodeURIComponent(filename)}?`,
     `t=${at}&`,
