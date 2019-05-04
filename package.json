@@ -10,7 +10,7 @@
   "license": "MIT",
   "dependencies": {
     "datauri": "^2.0.0",
-    "dotenv": "^7.0.0",
+    "dotenv": "^8.0.0",
     "node-fetch": "^2.5.0",
     "node-telegram-bot-api": "^0.30.0",
     "redis": "^2.8.0"
