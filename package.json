@@ -4,7 +4,9 @@
   "description": "",
   "main": "server.js",
   "scripts": {
-    "test": "eslint ."
+    "format": "prettier --write \"**/*.js\"",
+    "lint": "prettier --check \"**/*.js\"",
+    "test": "prettier --check \"**/*.js\""
   },
   "author": "soruly",
   "license": "MIT",
@@ -13,9 +15,8 @@
     "dotenv": "^8.0.0",
     "node-fetch": "^2.6.0",
     "node-telegram-bot-api": "^0.30.0",
+    "prettier": "^1.18.2",
     "redis": "^2.8.0"
   },
-  "devDependencies": {
-    "eslint": "^5.16.0"
-  }
+  "devDependencies": {}
 }

@@ -7,8 +7,7 @@ const path = require("path");
 const util = require("util");
 const Datauri = require("datauri");
 const redis = require("redis");
-const {promisify} = require("util");
-
+const { promisify } = require("util");
 
 const {
   SERVER_PORT,
@@ -23,7 +22,7 @@ let getAsync = null;
 let setAsync = null;
 let ttlAsync = null;
 if (REDIS_HOST) {
-  redisClient = redis.createClient({host: REDIS_HOST});
+  redisClient = redis.createClient({ host: REDIS_HOST });
   getAsync = promisify(redisClient.get).bind(redisClient);
   setAsync = promisify(redisClient.set).bind(redisClient);
   ttlAsync = promisify(redisClient.ttl).bind(redisClient);
@@ -37,121 +36,137 @@ if (!fs.existsSync(upload_dir)) {
 }
 
 const bot = new TelegramBot(TELEGRAM_TOKEN, {
-  webHook: {port: SERVER_PORT},
+  webHook: { port: SERVER_PORT },
   polling: false
 });
 
-const formatTime = (timeInSeconds) => {
+const formatTime = timeInSeconds => {
   const sec_num = parseInt(timeInSeconds, 10);
-  const hours = Math.floor(sec_num / 3600).toString().padStart(2, "0");
-  const minutes = Math.floor((sec_num - (hours * 3600)) / 60).toString().padStart(2, "0");
-  const seconds = (sec_num - (hours * 3600) - (minutes * 60)).toString().padStart(2, "0");
+  const hours = Math.floor(sec_num / 3600)
+    .toString()
+    .padStart(2, "0");
+  const minutes = Math.floor((sec_num - hours * 3600) / 60)
+    .toString()
+    .padStart(2, "0");
+  const seconds = (sec_num - hours * 3600 - minutes * 60)
+    .toString()
+    .padStart(2, "0");
   return `${hours}:${minutes}:${seconds}`;
 };
 
-const welcomeHandler = (message) => {
-  bot.sendMessage(message.from.id, "You can Send / Forward anime screenshots to me. I can't get images from URLs, please send the image directly to me ;)");
+const welcomeHandler = message => {
+  bot.sendMessage(
+    message.from.id,
+    "You can Send / Forward anime screenshots to me. I can't get images from URLs, please send the image directly to me ;)"
+  );
 };
 
-const submitSearch = (file_path) => new Promise(async (resolve, reject) => {
-  const datauri = new Datauri(file_path);
-  const formData = querystring.stringify({image: datauri.content});
-  const contentLength = formData.length;
-  let response = {};
-  try {
-    response = await fetch(
-      `https://trace.moe/api/search?token=${TRACE_MOE_TOKEN}`, {
-        headers: {
-          "Content-Length": contentLength,
-          "Content-Type": "application/x-www-form-urlencoded"
-        },
-        body: formData,
-        method: "POST"
-      });
-  } catch (error) {
-    reject(error);
-  }
-  if (parseInt(response.headers.get("x-whatanime-quota"), 10) === 0) {
-    resolve({text: "Search quota exceeded, please try again later."});
-    return;
-  }
-  let searchResult = {};
-  try {
-    searchResult = await response.json();
-  } catch (e) {
-    resolve({text: "Backend server error, please try again later."});
-    return;
-  }
-  if (!searchResult.docs) {
-    resolve({text: "Backend server error, please try again later."});
-    return;
-  }
-  if (searchResult.docs && searchResult.docs.length <= 0) {
-    resolve({text: "Sorry, I don't know what anime is it :\\"});
-    return;
-  }
-  const {
-    is_adult,
-    similarity,
-    title,
-    title_english,
-    title_chinese,
-    title_romaji,
-    anilist_id,
-    filename,
-    episode,
-    at,
-    tokenthumb
-  } = searchResult.docs[0];
-  let text = "";
-  if (similarity < 0.92) {
-    text = "I have low confidence in this, wild guess:\n";
-  }
-  text += [
-    title,
-    title_chinese,
-    title_romaji,
-    title_english
-  ].filter((e) => e).reduce( // deduplicate titles
-    (acc, cur) => acc.map((e) => e.toLowerCase()).includes(cur.toLowerCase()) ? acc : [
-      ...acc,
-      cur
-    ],
-    []
-  )
-    .map((t) => `\`${t}\``)
-    .join("\n");
-  text += "\n";
-  text += `\`EP#${episode.toString().padStart(2, "0")} ${formatTime(at)}\`\n`;
-  text += `\`${(similarity * 100).toFixed(1)}% similarity\`\n`;
-  const videoLink = [
-    `https://media.trace.moe/video/${anilist_id}/${encodeURIComponent(filename)}?`,
-    `t=${at}&`,
-    `token=${tokenthumb}`
-  ].join("");
-  resolve({
-    is_adult,
-    text,
-    video: videoLink
+const submitSearch = file_path =>
+  new Promise(async (resolve, reject) => {
+    const datauri = new Datauri(file_path);
+    const formData = querystring.stringify({ image: datauri.content });
+    const contentLength = formData.length;
+    let response = {};
+    try {
+      response = await fetch(
+        `https://trace.moe/api/search?token=${TRACE_MOE_TOKEN}`,
+        {
+          headers: {
+            "Content-Length": contentLength,
+            "Content-Type": "application/x-www-form-urlencoded"
+          },
+          body: formData,
+          method: "POST"
+        }
+      );
+    } catch (error) {
+      reject(error);
+    }
+    if (parseInt(response.headers.get("x-whatanime-quota"), 10) === 0) {
+      resolve({ text: "Search quota exceeded, please try again later." });
+      return;
+    }
+    let searchResult = {};
+    try {
+      searchResult = await response.json();
+    } catch (e) {
+      resolve({ text: "Backend server error, please try again later." });
+      return;
+    }
+    if (!searchResult.docs) {
+      resolve({ text: "Backend server error, please try again later." });
+      return;
+    }
+    if (searchResult.docs && searchResult.docs.length <= 0) {
+      resolve({ text: "Sorry, I don't know what anime is it :\\" });
+      return;
+    }
+    const {
+      is_adult,
+      similarity,
+      title,
+      title_english,
+      title_chinese,
+      title_romaji,
+      anilist_id,
+      filename,
+      episode,
+      at,
+      tokenthumb
+    } = searchResult.docs[0];
+    let text = "";
+    if (similarity < 0.92) {
+      text = "I have low confidence in this, wild guess:\n";
+    }
+    text += [title, title_chinese, title_romaji, title_english]
+      .filter(e => e)
+      .reduce(
+        // deduplicate titles
+        (acc, cur) =>
+          acc.map(e => e.toLowerCase()).includes(cur.toLowerCase())
+            ? acc
+            : [...acc, cur],
+        []
+      )
+      .map(t => `\`${t}\``)
+      .join("\n");
+    text += "\n";
+    text += `\`EP#${episode.toString().padStart(2, "0")} ${formatTime(at)}\`\n`;
+    text += `\`${(similarity * 100).toFixed(1)}% similarity\`\n`;
+    const videoLink = [
+      `https://media.trace.moe/video/${anilist_id}/${encodeURIComponent(
+        filename
+      )}?`,
+      `t=${at}&`,
+      `token=${tokenthumb}`
+    ].join("");
+    resolve({
+      is_adult,
+      text,
+      video: videoLink
+    });
   });
-});
 
-const messageIsMentioningBot = (message) => {
+const messageIsMentioningBot = message => {
   if (message.entities) {
-    return message.entities
-      .filter((entity) => entity.type === "mention")
-      .map((entity) => message.text.substr(entity.offset, entity.length))
-      .filter((entity) => entity.toLowerCase() === `@${bot_name.toLowerCase()}`)
-      .length >= 1;
+    return (
+      message.entities
+        .filter(entity => entity.type === "mention")
+        .map(entity => message.text.substr(entity.offset, entity.length))
+        .filter(entity => entity.toLowerCase() === `@${bot_name.toLowerCase()}`)
+        .length >= 1
+    );
   }
   if (message.caption) {
     // Telegram does not provide entities when mentioning the bot in photo caption
-    return message.caption.toLowerCase().indexOf(`@${bot_name.toLowerCase()}`) >= 0;
+    return (
+      message.caption.toLowerCase().indexOf(`@${bot_name.toLowerCase()}`) >= 0
+    );
   }
   return false;
 };
 
-const messageIsMute = (message) => {
+const messageIsMute = message => {
   if (message.caption) {
     return message.caption.toLowerCase().indexOf("mute") >= 0;
   }
@@ -160,7 +175,7 @@ const messageIsMute = (message) => {
 
 // The return type is PhotoSize
 // https://core.telegram.org/bots/api#photosize
-const getImageFromMessage = (message) => {
+const getImageFromMessage = message => {
   if (message.photo) {
     return message.photo.pop(); // get the last (largest) photo
   }
@@ -173,12 +188,17 @@ const getImageFromMessage = (message) => {
   return false;
 };
 
-const limitExceeded = async (message) => {
+const limitExceeded = async message => {
   if (REDIS_HOST) {
     let limit = await getAsync(`telegram_${message.from.id}_limit`);
     const limitTTL = await ttlAsync(`telegram_${message.from.id}_limit`);
     limit = limit === null ? 5 - 1 : limit - 1;
-    await setAsync(`telegram_${message.from.id}_limit`, limit, "EX", parseInt(limitTTL, 10) > 0 ? parseInt(limitTTL, 10) : 60);
+    await setAsync(
+      `telegram_${message.from.id}_limit`,
+      limit,
+      "EX",
+      parseInt(limitTTL, 10) > 0 ? parseInt(limitTTL, 10) : 60
+    );
     if (limit < 0) {
       return true;
     }
@@ -186,7 +206,12 @@ const limitExceeded = async (message) => {
     let quota = await getAsync(`telegram_${message.from.id}_quota`);
     const quotaTTL = await ttlAsync(`telegram_${message.from.id}_quota`);
     quota = quota === null ? 50 - 1 : quota - 1;
-    await setAsync(`telegram_${message.from.id}_quota`, quota, "EX", parseInt(quotaTTL, 10) > 0 ? parseInt(quotaTTL, 10) : 86400);
+    await setAsync(
+      `telegram_${message.from.id}_quota`,
+      quota,
+      "EX",
+      parseInt(quotaTTL, 10) > 0 ? parseInt(quotaTTL, 10) : 86400
+    );
     if (quota < 0) {
       return true;
     }
@@ -194,31 +219,45 @@ const limitExceeded = async (message) => {
   return false;
 };
 
-const privateMessageHandler = async (message) => {
-  const responding_msg = message.reply_to_message ? message.reply_to_message : message;
+const privateMessageHandler = async message => {
+  const responding_msg = message.reply_to_message
+    ? message.reply_to_message
+    : message;
   if (!getImageFromMessage(responding_msg)) {
-    await bot.sendMessage(message.from.id, "You can Send / Forward anime screenshots to me. I can't get images from URLs, please send the image directly to me ;)");
+    await bot.sendMessage(
+      message.from.id,
+      "You can Send / Forward anime screenshots to me. I can't get images from URLs, please send the image directly to me ;)"
+    );
     return;
   }
   if (await limitExceeded(message)) {
-    await bot.sendMessage(message.from.id, "Search limit exceeded, please try again later", {reply_to_message_id: responding_msg.message_id});
+    await bot.sendMessage(
+      message.from.id,
+      "Search limit exceeded, please try again later",
+      { reply_to_message_id: responding_msg.message_id }
+    );
     return;
   }
 
-  const file_path = path.resolve(upload_dir, `${(new Date()).getTime()}.jpg`);
+  const file_path = path.resolve(upload_dir, `${new Date().getTime()}.jpg`);
 
-  const [
-    bot_message,
-    err
-  ] = await Promise.all([
+  const [bot_message, err] = await Promise.all([
     bot.sendMessage(message.chat.id, "Downloading the image...", {
       reply_to_message_id: responding_msg.message_id
     }),
-    fetch(`https://api.telegram.org/bot${TELEGRAM_TOKEN}/getFile?file_id=${getImageFromMessage(responding_msg).file_id}`)
-      .then((res) => res.json())
-      .then((json) => fetch(`https://api.telegram.org/file/bot${TELEGRAM_TOKEN}/${json.result.file_path}`))
-      .then((res) => res.buffer())
-      .then((buffer) => util.promisify(fs.writeFile)(file_path, buffer))
+    fetch(
+      `https://api.telegram.org/bot${TELEGRAM_TOKEN}/getFile?file_id=${
+        getImageFromMessage(responding_msg).file_id
+      }`
+    )
+      .then(res => res.json())
+      .then(json =>
+        fetch(
+          `https://api.telegram.org/file/bot${TELEGRAM_TOKEN}/${json.result.file_path}`
+        )
+      )
+      .then(res => res.buffer())
+      .then(buffer => util.promisify(fs.writeFile)(file_path, buffer))
   ]);
 
   if (err) {
@@ -229,10 +268,7 @@ const privateMessageHandler = async (message) => {
   }
 
   try {
-    const [
-      _,
-      result
-    ] = await Promise.all([
+    const [_, result] = await Promise.all([
       bot.editMessageText("Downloading the image...searching...", {
         chat_id: bot_message.chat.id,
         message_id: bot_message.message_id
@@ -246,7 +282,9 @@ const privateMessageHandler = async (message) => {
       parse_mode: "Markdown"
     });
     if (result.video) {
-      const videoLink = messageIsMute(message) ? `${result.video}&mute` : result.video;
+      const videoLink = messageIsMute(message)
+        ? `${result.video}&mute`
+        : result.video;
       await bot.sendChatAction(message.chat.id, "upload_video");
       await bot.sendVideo(message.chat.id, videoLink);
     }
@@ -259,29 +297,47 @@ const privateMessageHandler = async (message) => {
   }
 };
 
-const groupMessageHandler = async (message) => {
+const groupMessageHandler = async message => {
   if (!messageIsMentioningBot(message)) {
     return;
   }
-  const responding_msg = message.reply_to_message ? message.reply_to_message : message;
+  const responding_msg = message.reply_to_message
+    ? message.reply_to_message
+    : message;
   if (!getImageFromMessage(responding_msg)) {
     // cannot find image from the message mentioning the bot
-    await bot.sendMessage(message.chat.id, "Mention me in an anime screenshot, I will tell you what anime is that", {reply_to_message_id: message.message_id});
+    await bot.sendMessage(
+      message.chat.id,
+      "Mention me in an anime screenshot, I will tell you what anime is that",
+      { reply_to_message_id: message.message_id }
+    );
     return;
   }
 
   if (await limitExceeded(message)) {
-    await bot.sendMessage(message.chat.id, "Your search limit exceeded, please try again later", {reply_to_message_id: responding_msg.message_id});
+    await bot.sendMessage(
+      message.chat.id,
+      "Your search limit exceeded, please try again later",
+      { reply_to_message_id: responding_msg.message_id }
+    );
     return;
   }
 
-  const file_path = path.resolve(upload_dir, `${(new Date()).getTime()}.jpg`);
+  const file_path = path.resolve(upload_dir, `${new Date().getTime()}.jpg`);
 
-  const err = await fetch(`https://api.telegram.org/bot${TELEGRAM_TOKEN}/getFile?file_id=${getImageFromMessage(responding_msg).file_id}`)
-    .then((res) => res.json())
-    .then((json) => fetch(`https://api.telegram.org/file/bot${TELEGRAM_TOKEN}/${json.result.file_path}`))
-    .then((res) => res.buffer())
-    .then((buffer) => util.promisify(fs.writeFile)(file_path, buffer));
+  const err = await fetch(
+    `https://api.telegram.org/bot${TELEGRAM_TOKEN}/getFile?file_id=${
+      getImageFromMessage(responding_msg).file_id
+    }`
+  )
+    .then(res => res.json())
+    .then(json =>
+      fetch(
+        `https://api.telegram.org/file/bot${TELEGRAM_TOKEN}/${json.result.file_path}`
+      )
+    )
+    .then(res => res.buffer())
+    .then(buffer => util.promisify(fs.writeFile)(file_path, buffer));
 
   if (err) {
     await bot.sendMessage(message.chat.id, "Error downloading image", {
@@ -293,9 +349,13 @@ const groupMessageHandler = async (message) => {
   try {
     const result = await submitSearch(file_path);
     if (result.is_adult) {
-      await bot.sendMessage(message.chat.id, "I've found an adult result 😳\nPlease forward it to me via Private Chat 😏", {
-        reply_to_message_id: responding_msg.message_id
-      });
+      await bot.sendMessage(
+        message.chat.id,
+        "I've found an adult result 😳\nPlease forward it to me via Private Chat 😏",
+        {
+          reply_to_message_id: responding_msg.message_id
+        }
+      );
       return;
     }
     await bot.sendMessage(message.chat.id, result.text, {
@@ -303,19 +363,26 @@ const groupMessageHandler = async (message) => {
       parse_mode: "Markdown"
     });
     if (result.video) {
-      const videoLink = messageIsMute(message) ? `${result.video}&mute` : result.video;
+      const videoLink = messageIsMute(message)
+        ? `${result.video}&mute`
+        : result.video;
       await bot.sendChatAction(message.chat.id, "upload_video");
-      await bot.sendVideo(message.chat.id, videoLink, {reply_to_message_id: responding_msg.message_id});
+      await bot.sendVideo(message.chat.id, videoLink, {
+        reply_to_message_id: responding_msg.message_id
+      });
     }
   } catch (error) {
     console.log(error);
   }
 };
 
-const messageHandler = (message) => {
+const messageHandler = message => {
   if (message.chat.type === "private") {
     privateMessageHandler(message);
-  } else if (message.chat.type === "group" || message.chat.type === "supergroup") {
+  } else if (
+    message.chat.type === "group" ||
+    message.chat.type === "supergroup"
+  ) {
     groupMessageHandler(message);
   }
 };
