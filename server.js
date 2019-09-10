@@ -285,8 +285,12 @@ const privateMessageHandler = async message => {
       const videoLink = messageIsMute(message)
         ? `${result.video}&mute`
         : result.video;
-      await bot.sendChatAction(message.chat.id, "upload_video");
-      await bot.sendVideo(message.chat.id, videoLink);
+      try {
+        await bot.sendChatAction(message.chat.id, "upload_video");
+        await bot.sendVideo(message.chat.id, videoLink);
+      } catch (error) {
+        console.log(error);
+      }
     }
   } catch (error) {
     await bot.editMessageText("Server error", {
