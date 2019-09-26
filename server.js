@@ -5,6 +5,7 @@ const querystring = require("querystring");
 const fs = require("fs");
 const path = require("path");
 const util = require("util");
+const os = require("os");
 const Datauri = require("datauri");
 const redis = require("redis");
 const { promisify } = require("util");
@@ -30,7 +31,10 @@ if (REDIS_HOST) {
 
 let bot_name = null;
 
-const upload_dir = path.resolve(__dirname, "uploads");
+const upload_dir = path.join(
+  os.tmpdir(),
+  `trace.moe-telegram-bot-${process.pid}`
+);
 if (!fs.existsSync(upload_dir)) {
   fs.mkdirSync(upload_dir);
 }
@@ -275,6 +279,7 @@ const privateMessageHandler = async message => {
       }),
       submitSearch(file_path)
     ]);
+    fs.unlink(file_path, () => {});
     // better to send responses one-by-one
     await bot.editMessageText(result.text, {
       chat_id: bot_message.chat.id,
@@ -352,6 +357,7 @@ const groupMessageHandler = async message => {
 
   try {
     const result = await submitSearch(file_path);
+    fs.unlink(file_path, () => {});
     if (result.is_adult) {
       await bot.sendMessage(
         message.chat.id,
