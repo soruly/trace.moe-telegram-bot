@@ -11,8 +11,8 @@
   "author": "soruly",
   "license": "MIT",
   "dependencies": {
-    "datauri": "^2.0.0",
     "dotenv": "^8.1.0",
+    "form-data": "^2.5.1",
     "node-fetch": "^2.6.0",
     "node-telegram-bot-api": "^0.30.0",
     "prettier": "^1.18.2",

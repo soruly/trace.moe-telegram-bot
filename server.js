@@ -6,7 +6,7 @@ const fs = require("fs");
 const path = require("path");
 const util = require("util");
 const os = require("os");
-const Datauri = require("datauri");
+const FormData = require("form-data");
 const redis = require("redis");
 const { promisify } = require("util");
 
@@ -67,19 +67,14 @@ const welcomeHandler = message => {
 
 const submitSearch = file_path =>
   new Promise(async (resolve, reject) => {
-    const datauri = new Datauri(file_path);
-    const formData = querystring.stringify({ image: datauri.content });
-    const contentLength = formData.length;
+    const form = new FormData();
+    form.append("image", fs.readFileSync(file_path), "blob");
     let response = {};
     try {
       response = await fetch(
         `https://trace.moe/api/search?token=${TRACE_MOE_TOKEN}`,
         {
-          headers: {
-            "Content-Length": contentLength,
-            "Content-Type": "application/x-www-form-urlencoded"
-          },
-          body: formData,
+          body: form,
           method: "POST"
         }
       );
