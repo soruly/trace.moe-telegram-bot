@@ -14,7 +14,7 @@
     "dotenv": "^8.2.0",
     "form-data": "^2.5.1",
     "node-fetch": "^2.6.0",
-    "node-telegram-bot-api": "^0.30.0",
+    "node-telegram-bot-api": "^0.40.0",
     "prettier": "^1.18.2",
     "redis": "^2.8.0"
   },
