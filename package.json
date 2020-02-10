@@ -15,7 +15,7 @@
     "form-data": "^3.0.0",
     "node-fetch": "^2.6.0",
     "node-telegram-bot-api": "^0.40.0",
-    "redis": "^2.8.0"
+    "redis": "^3.0.2"
   },
   "devDependencies": {
     "prettier": "^1.19.1"
