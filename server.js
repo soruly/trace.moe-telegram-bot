@@ -15,7 +15,7 @@ const {
   REDIS_HOST,
   TELEGRAM_TOKEN,
   TELEGRAM_WEBHOOK,
-  TRACE_MOE_TOKEN
+  TRACE_MOE_TOKEN,
 } = process.env;
 
 let redisClient = null;
@@ -41,10 +41,10 @@ if (!fs.existsSync(upload_dir)) {
 
 const bot = new TelegramBot(TELEGRAM_TOKEN, {
   webHook: { port: SERVER_PORT },
-  polling: false
+  polling: false,
 });
 
-const formatTime = timeInSeconds => {
+const formatTime = (timeInSeconds) => {
   const sec_num = parseInt(timeInSeconds, 10);
   const hours = Math.floor(sec_num / 3600)
     .toString()
@@ -58,14 +58,14 @@ const formatTime = timeInSeconds => {
   return `${hours}:${minutes}:${seconds}`;
 };
 
-const welcomeHandler = message => {
+const welcomeHandler = (message) => {
   bot.sendMessage(
     message.from.id,
     "You can Send / Forward anime screenshots to me. I can't get images from URLs, please send the image directly to me ;)"
   );
 };
 
-const submitSearch = file_path =>
+const submitSearch = (file_path) =>
   new Promise(async (resolve, reject) => {
     const form = new FormData();
     form.append("image", fs.readFileSync(file_path), "blob");
@@ -75,7 +75,7 @@ const submitSearch = file_path =>
         `https://trace.moe/api/search?token=${TRACE_MOE_TOKEN}`,
         {
           body: form,
-          method: "POST"
+          method: "POST",
         }
       );
     } catch (error) {
@@ -111,23 +111,23 @@ const submitSearch = file_path =>
       filename,
       episode,
       at,
-      tokenthumb
+      tokenthumb,
     } = searchResult.docs[0];
     let text = "";
     if (similarity < 0.92) {
       text = "I have low confidence in this, wild guess:\n";
     }
     text += [title, title_chinese, title_romaji, title_english]
-      .filter(e => e)
+      .filter((e) => e)
       .reduce(
         // deduplicate titles
         (acc, cur) =>
-          acc.map(e => e.toLowerCase()).includes(cur.toLowerCase())
+          acc.map((e) => e.toLowerCase()).includes(cur.toLowerCase())
             ? acc
             : [...acc, cur],
         []
       )
-      .map(t => `\`${t}\``)
+      .map((t) => `\`${t}\``)
       .join("\n");
     text += "\n";
     text += `\`EP#${episode.toString().padStart(2, "0")} ${formatTime(at)}\`\n`;
@@ -137,23 +137,24 @@ const submitSearch = file_path =>
         filename
       )}?`,
       `t=${at}&`,
-      `token=${tokenthumb}`
+      `token=${tokenthumb}`,
     ].join("");
     resolve({
       is_adult,
       text,
-      video: videoLink
+      video: videoLink,
     });
   });
 
-const messageIsMentioningBot = message => {
+const messageIsMentioningBot = (message) => {
   if (message.entities) {
     return (
       message.entities
-        .filter(entity => entity.type === "mention")
-        .map(entity => message.text.substr(entity.offset, entity.length))
-        .filter(entity => entity.toLowerCase() === `@${bot_name.toLowerCase()}`)
-        .length >= 1
+        .filter((entity) => entity.type === "mention")
+        .map((entity) => message.text.substr(entity.offset, entity.length))
+        .filter(
+          (entity) => entity.toLowerCase() === `@${bot_name.toLowerCase()}`
+        ).length >= 1
     );
   }
   if (message.caption) {
@@ -165,7 +166,7 @@ const messageIsMentioningBot = message => {
   return false;
 };
 
-const messageIsMute = message => {
+const messageIsMute = (message) => {
   if (message.caption) {
     return message.caption.toLowerCase().indexOf("mute") >= 0;
   }
@@ -174,7 +175,7 @@ const messageIsMute = message => {
 
 // The return type is PhotoSize
 // https://core.telegram.org/bots/api#photosize
-const getImageFromMessage = message => {
+const getImageFromMessage = (message) => {
   if (message.photo) {
     return message.photo.pop(); // get the last (largest) photo
   }
@@ -187,7 +188,7 @@ const getImageFromMessage = message => {
   return false;
 };
 
-const limitExceeded = async message => {
+const limitExceeded = async (message) => {
   if (REDIS_HOST) {
     let limit = await getAsync(`telegram_${message.from.id}_limit`);
     const limitTTL = await ttlAsync(`telegram_${message.from.id}_limit`);
@@ -218,7 +219,7 @@ const limitExceeded = async message => {
   return false;
 };
 
-const privateMessageHandler = async message => {
+const privateMessageHandler = async (message) => {
   const responding_msg = message.reply_to_message
     ? message.reply_to_message
     : message;
@@ -242,27 +243,27 @@ const privateMessageHandler = async message => {
 
   const [bot_message, err] = await Promise.all([
     bot.sendMessage(message.chat.id, "Downloading the image...", {
-      reply_to_message_id: responding_msg.message_id
+      reply_to_message_id: responding_msg.message_id,
     }),
     fetch(
       `https://api.telegram.org/bot${TELEGRAM_TOKEN}/getFile?file_id=${
         getImageFromMessage(responding_msg).file_id
       }`
     )
-      .then(res => res.json())
-      .then(json =>
+      .then((res) => res.json())
+      .then((json) =>
         fetch(
           `https://api.telegram.org/file/bot${TELEGRAM_TOKEN}/${json.result.file_path}`
         )
       )
-      .then(res => res.buffer())
-      .then(buffer => util.promisify(fs.writeFile)(file_path, buffer))
+      .then((res) => res.buffer())
+      .then((buffer) => util.promisify(fs.writeFile)(file_path, buffer)),
   ]);
 
   if (err) {
     await bot.editMessageText("Error downloading image", {
       chat_id: bot_message.chat.id,
-      message_id: bot_message.message_id
+      message_id: bot_message.message_id,
     });
   }
 
@@ -270,16 +271,16 @@ const privateMessageHandler = async message => {
     const [_, result] = await Promise.all([
       bot.editMessageText("Downloading the image...searching...", {
         chat_id: bot_message.chat.id,
-        message_id: bot_message.message_id
+        message_id: bot_message.message_id,
       }),
-      submitSearch(file_path)
+      submitSearch(file_path),
     ]);
     fs.unlink(file_path, () => {});
     // better to send responses one-by-one
     await bot.editMessageText(result.text, {
       chat_id: bot_message.chat.id,
       message_id: bot_message.message_id,
-      parse_mode: "Markdown"
+      parse_mode: "Markdown",
     });
     if (result.video) {
       const videoLink = messageIsMute(message)
@@ -295,13 +296,13 @@ const privateMessageHandler = async message => {
   } catch (error) {
     await bot.editMessageText("Server error", {
       chat_id: bot_message.chat.id,
-      message_id: bot_message.message_id
+      message_id: bot_message.message_id,
     });
     console.log(error);
   }
 };
 
-const groupMessageHandler = async message => {
+const groupMessageHandler = async (message) => {
   if (!messageIsMentioningBot(message)) {
     return;
   }
@@ -334,18 +335,18 @@ const groupMessageHandler = async message => {
       getImageFromMessage(responding_msg).file_id
     }`
   )
-    .then(res => res.json())
-    .then(json =>
+    .then((res) => res.json())
+    .then((json) =>
       fetch(
         `https://api.telegram.org/file/bot${TELEGRAM_TOKEN}/${json.result.file_path}`
       )
     )
-    .then(res => res.buffer())
-    .then(buffer => util.promisify(fs.writeFile)(file_path, buffer));
+    .then((res) => res.buffer())
+    .then((buffer) => util.promisify(fs.writeFile)(file_path, buffer));
 
   if (err) {
     await bot.sendMessage(message.chat.id, "Error downloading image", {
-      reply_to_message_id: responding_msg.message_id
+      reply_to_message_id: responding_msg.message_id,
     });
     return;
   }
@@ -358,14 +359,14 @@ const groupMessageHandler = async message => {
         message.chat.id,
         "I've found an adult result 😳\nPlease forward it to me via Private Chat 😏",
         {
-          reply_to_message_id: responding_msg.message_id
+          reply_to_message_id: responding_msg.message_id,
         }
       );
       return;
     }
     await bot.sendMessage(message.chat.id, result.text, {
       reply_to_message_id: responding_msg.message_id,
-      parse_mode: "Markdown"
+      parse_mode: "Markdown",
     });
     if (result.video) {
       const videoLink = messageIsMute(message)
@@ -373,7 +374,7 @@ const groupMessageHandler = async message => {
         : result.video;
       await bot.sendChatAction(message.chat.id, "upload_video");
       await bot.sendVideo(message.chat.id, videoLink, {
-        reply_to_message_id: responding_msg.message_id
+        reply_to_message_id: responding_msg.message_id,
       });
     }
   } catch (error) {
@@ -381,7 +382,7 @@ const groupMessageHandler = async message => {
   }
 };
 
-const messageHandler = message => {
+const messageHandler = (message) => {
   if (message.chat.type === "private") {
     privateMessageHandler(message);
   } else if (
