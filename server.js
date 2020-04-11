@@ -1,7 +1,6 @@
 require("dotenv").config();
 const TelegramBot = require("node-telegram-bot-api");
 const fetch = require("node-fetch");
-const querystring = require("querystring");
 const fs = require("fs");
 const path = require("path");
 const util = require("util");
