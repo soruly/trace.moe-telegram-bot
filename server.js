@@ -1,9 +1,6 @@
 require("dotenv").config();
 const TelegramBot = require("node-telegram-bot-api");
 const fetch = require("node-fetch");
-const fs = require("fs-extra");
-const path = require("path");
-const os = require("os");
 const FormData = require("form-data");
 const redis = require("redis");
 const { promisify } = require("util");
@@ -28,11 +25,6 @@ if (REDIS_HOST) {
 }
 
 let bot_name = null;
-
-const upload_dir = path.join(
-  os.tmpdir(),
-  `trace.moe-telegram-bot-${process.pid}`
-);
 
 const bot = new TelegramBot(TELEGRAM_TOKEN, {
   webHook: { port: SERVER_PORT },
@@ -60,10 +52,10 @@ const welcomeHandler = (message) => {
   );
 };
 
-const submitSearch = (file_path) =>
+const submitSearch = (buffer) =>
   new Promise(async (resolve, reject) => {
     const form = new FormData();
-    form.append("image", fs.readFileSync(file_path), "blob");
+    form.append("image", buffer, "blob");
     let response = {};
     try {
       response = await fetch(
@@ -234,9 +226,7 @@ const privateMessageHandler = async (message) => {
     return;
   }
 
-  const file_path = path.resolve(upload_dir, `${new Date().getTime()}.jpg`);
-
-  const [bot_message, err] = await Promise.all([
+  const [bot_message, buffer] = await Promise.all([
     bot.sendMessage(message.chat.id, "Downloading the image...", {
       reply_to_message_id: responding_msg.message_id,
     }),
@@ -251,11 +241,10 @@ const privateMessageHandler = async (message) => {
           `https://api.telegram.org/file/bot${TELEGRAM_TOKEN}/${json.result.file_path}`
         )
       )
-      .then((res) => res.buffer())
-      .then((buffer) => fs.outputFileSync(file_path, buffer)),
+      .then((res) => res.buffer()),
   ]);
 
-  if (err) {
+  if (!buffer) {
     await bot.editMessageText("Error downloading image", {
       chat_id: bot_message.chat.id,
       message_id: bot_message.message_id,
@@ -268,9 +257,8 @@ const privateMessageHandler = async (message) => {
         chat_id: bot_message.chat.id,
         message_id: bot_message.message_id,
       }),
-      submitSearch(file_path),
+      submitSearch(buffer),
     ]);
-    fs.unlink(file_path, () => {});
     // better to send responses one-by-one
     await bot.editMessageText(result.text, {
       chat_id: bot_message.chat.id,
@@ -323,9 +311,7 @@ const groupMessageHandler = async (message) => {
     return;
   }
 
-  const file_path = path.resolve(upload_dir, `${new Date().getTime()}.jpg`);
-
-  const err = await fetch(
+  const buffer = await fetch(
     `https://api.telegram.org/bot${TELEGRAM_TOKEN}/getFile?file_id=${
       getImageFromMessage(responding_msg).file_id
     }`
@@ -336,10 +322,9 @@ const groupMessageHandler = async (message) => {
         `https://api.telegram.org/file/bot${TELEGRAM_TOKEN}/${json.result.file_path}`
       )
     )
-    .then((res) => res.buffer())
-    .then((buffer) => fs.outputFileSync(file_path, buffer));
+    .then((res) => res.buffer());
 
-  if (err) {
+  if (!buffer) {
     await bot.sendMessage(message.chat.id, "Error downloading image", {
       reply_to_message_id: responding_msg.message_id,
     });
@@ -347,8 +332,7 @@ const groupMessageHandler = async (message) => {
   }
 
   try {
-    const result = await submitSearch(file_path);
-    fs.unlink(file_path, () => {});
+    const result = await submitSearch(buffer);
     if (result.is_adult) {
       await bot.sendMessage(
         message.chat.id,
