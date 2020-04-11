@@ -1,9 +1,8 @@
 require("dotenv").config();
 const TelegramBot = require("node-telegram-bot-api");
 const fetch = require("node-fetch");
-const fs = require("fs");
+const fs = require("fs-extra");
 const path = require("path");
-const util = require("util");
 const os = require("os");
 const FormData = require("form-data");
 const redis = require("redis");
@@ -34,9 +33,6 @@ const upload_dir = path.join(
   os.tmpdir(),
   `trace.moe-telegram-bot-${process.pid}`
 );
-if (!fs.existsSync(upload_dir)) {
-  fs.mkdirSync(upload_dir);
-}
 
 const bot = new TelegramBot(TELEGRAM_TOKEN, {
   webHook: { port: SERVER_PORT },
@@ -256,7 +252,7 @@ const privateMessageHandler = async (message) => {
         )
       )
       .then((res) => res.buffer())
-      .then((buffer) => util.promisify(fs.writeFile)(file_path, buffer)),
+      .then((buffer) => fs.outputFileSync(file_path, buffer)),
   ]);
 
   if (err) {
@@ -341,7 +337,7 @@ const groupMessageHandler = async (message) => {
       )
     )
     .then((res) => res.buffer())
-    .then((buffer) => util.promisify(fs.writeFile)(file_path, buffer));
+    .then((buffer) => fs.outputFileSync(file_path, buffer));
 
   if (err) {
     await bot.sendMessage(message.chat.id, "Error downloading image", {
