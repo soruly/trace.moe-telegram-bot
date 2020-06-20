@@ -5,13 +5,7 @@ const FormData = require("form-data");
 const redis = require("redis");
 const { promisify } = require("util");
 
-const {
-  SERVER_PORT,
-  REDIS_HOST,
-  TELEGRAM_TOKEN,
-  TELEGRAM_WEBHOOK,
-  TRACE_MOE_TOKEN,
-} = process.env;
+const { SERVER_PORT, REDIS_HOST, TELEGRAM_TOKEN, TELEGRAM_WEBHOOK, TRACE_MOE_TOKEN } = process.env;
 
 let redisClient = null;
 let getAsync = null;
@@ -39,9 +33,7 @@ const formatTime = (timeInSeconds) => {
   const minutes = Math.floor((sec_num - hours * 3600) / 60)
     .toString()
     .padStart(2, "0");
-  const seconds = (sec_num - hours * 3600 - minutes * 60)
-    .toString()
-    .padStart(2, "0");
+  const seconds = (sec_num - hours * 3600 - minutes * 60).toString().padStart(2, "0");
   return `${hours}:${minutes}:${seconds}`;
 };
 
@@ -58,13 +50,10 @@ const submitSearch = (buffer) =>
     form.append("image", buffer, "blob");
     let response = {};
     try {
-      response = await fetch(
-        `https://trace.moe/api/search?token=${TRACE_MOE_TOKEN}`,
-        {
-          body: form,
-          method: "POST",
-        }
-      );
+      response = await fetch(`https://trace.moe/api/search?token=${TRACE_MOE_TOKEN}`, {
+        body: form,
+        method: "POST",
+      });
     } catch (error) {
       reject(error);
     }
@@ -109,9 +98,7 @@ const submitSearch = (buffer) =>
       .reduce(
         // deduplicate titles
         (acc, cur) =>
-          acc.map((e) => e.toLowerCase()).includes(cur.toLowerCase())
-            ? acc
-            : [...acc, cur],
+          acc.map((e) => e.toLowerCase()).includes(cur.toLowerCase()) ? acc : [...acc, cur],
         []
       )
       .map((t) => `\`${t}\``)
@@ -120,9 +107,7 @@ const submitSearch = (buffer) =>
     text += `\`EP#${episode.toString().padStart(2, "0")} ${formatTime(at)}\`\n`;
     text += `\`${(similarity * 100).toFixed(1)}% similarity\`\n`;
     const videoLink = [
-      `https://media.trace.moe/video/${anilist_id}/${encodeURIComponent(
-        filename
-      )}?`,
+      `https://media.trace.moe/video/${anilist_id}/${encodeURIComponent(filename)}?`,
       `t=${at}&`,
       `token=${tokenthumb}`,
     ].join("");
@@ -139,16 +124,12 @@ const messageIsMentioningBot = (message) => {
       message.entities
         .filter((entity) => entity.type === "mention")
         .map((entity) => message.text.substr(entity.offset, entity.length))
-        .filter(
-          (entity) => entity.toLowerCase() === `@${bot_name.toLowerCase()}`
-        ).length >= 1
+        .filter((entity) => entity.toLowerCase() === `@${bot_name.toLowerCase()}`).length >= 1
     );
   }
   if (message.caption) {
     // Telegram does not provide entities when mentioning the bot in photo caption
-    return (
-      message.caption.toLowerCase().indexOf(`@${bot_name.toLowerCase()}`) >= 0
-    );
+    return message.caption.toLowerCase().indexOf(`@${bot_name.toLowerCase()}`) >= 0;
   }
   return false;
 };
@@ -207,9 +188,7 @@ const limitExceeded = async (message) => {
 };
 
 const privateMessageHandler = async (message) => {
-  const responding_msg = message.reply_to_message
-    ? message.reply_to_message
-    : message;
+  const responding_msg = message.reply_to_message ? message.reply_to_message : message;
   if (!getImageFromMessage(responding_msg)) {
     await bot.sendMessage(
       message.from.id,
@@ -218,11 +197,9 @@ const privateMessageHandler = async (message) => {
     return;
   }
   if (await limitExceeded(message)) {
-    await bot.sendMessage(
-      message.from.id,
-      "Search limit exceeded, please try again later",
-      { reply_to_message_id: responding_msg.message_id }
-    );
+    await bot.sendMessage(message.from.id, "Search limit exceeded, please try again later", {
+      reply_to_message_id: responding_msg.message_id,
+    });
     return;
   }
 
@@ -237,9 +214,7 @@ const privateMessageHandler = async (message) => {
     )
       .then((res) => res.json())
       .then((json) =>
-        fetch(
-          `https://api.telegram.org/file/bot${TELEGRAM_TOKEN}/${json.result.file_path}`
-        )
+        fetch(`https://api.telegram.org/file/bot${TELEGRAM_TOKEN}/${json.result.file_path}`)
       )
       .then((res) => res.buffer()),
   ]);
@@ -266,9 +241,7 @@ const privateMessageHandler = async (message) => {
       parse_mode: "Markdown",
     });
     if (result.video) {
-      const videoLink = messageIsMute(message)
-        ? `${result.video}&mute`
-        : result.video;
+      const videoLink = messageIsMute(message) ? `${result.video}&mute` : result.video;
       try {
         await bot.sendChatAction(message.chat.id, "upload_video");
         await bot.sendVideo(message.chat.id, videoLink);
@@ -289,9 +262,7 @@ const groupMessageHandler = async (message) => {
   if (!messageIsMentioningBot(message)) {
     return;
   }
-  const responding_msg = message.reply_to_message
-    ? message.reply_to_message
-    : message;
+  const responding_msg = message.reply_to_message ? message.reply_to_message : message;
   if (!getImageFromMessage(responding_msg)) {
     // cannot find image from the message mentioning the bot
     await bot.sendMessage(
@@ -303,11 +274,9 @@ const groupMessageHandler = async (message) => {
   }
 
   if (await limitExceeded(message)) {
-    await bot.sendMessage(
-      message.chat.id,
-      "Your search limit exceeded, please try again later",
-      { reply_to_message_id: responding_msg.message_id }
-    );
+    await bot.sendMessage(message.chat.id, "Your search limit exceeded, please try again later", {
+      reply_to_message_id: responding_msg.message_id,
+    });
     return;
   }
 
@@ -318,9 +287,7 @@ const groupMessageHandler = async (message) => {
   )
     .then((res) => res.json())
     .then((json) =>
-      fetch(
-        `https://api.telegram.org/file/bot${TELEGRAM_TOKEN}/${json.result.file_path}`
-      )
+      fetch(`https://api.telegram.org/file/bot${TELEGRAM_TOKEN}/${json.result.file_path}`)
     )
     .then((res) => res.buffer());
 
@@ -348,9 +315,7 @@ const groupMessageHandler = async (message) => {
       parse_mode: "Markdown",
     });
     if (result.video) {
-      const videoLink = messageIsMute(message)
-        ? `${result.video}&mute`
-        : result.video;
+      const videoLink = messageIsMute(message) ? `${result.video}&mute` : result.video;
       await bot.sendChatAction(message.chat.id, "upload_video");
       await bot.sendVideo(message.chat.id, videoLink, {
         reply_to_message_id: responding_msg.message_id,
@@ -364,10 +329,7 @@ const groupMessageHandler = async (message) => {
 const messageHandler = (message) => {
   if (message.chat.type === "private") {
     privateMessageHandler(message);
-  } else if (
-    message.chat.type === "group" ||
-    message.chat.type === "supergroup"
-  ) {
+  } else if (message.chat.type === "group" || message.chat.type === "supergroup") {
     groupMessageHandler(message);
   }
 };
