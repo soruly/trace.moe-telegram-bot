@@ -3,11 +3,6 @@ const TelegramBot = require("node-telegram-bot-api");
 const fetch = require("node-fetch");
 const redis = require("redis");
 const { promisify } = require("util");
-<<<<<<< HEAD
-=======
-const getUrls = require("get-urls");
-const { off } = require("process");
->>>>>>> 0b6f7ef... Implemented much simpler URL search
 
 const { SERVER_PORT, REDIS_HOST, TELEGRAM_TOKEN, TELEGRAM_WEBHOOK, TRACE_MOE_TOKEN } = process.env;
 
@@ -28,6 +23,9 @@ const bot = new TelegramBot(TELEGRAM_TOKEN, {
   webHook: { port: SERVER_PORT },
   polling: false,
 });
+
+const infoText =
+  "You can Send / Forward anime screenshots to me. Directly send images, gifs, videos, or URLs for staic images. No URLs for gifs or videos, please ;)";
 
 const formatTime = (timeInSeconds) => {
   const sec_num = parseInt(timeInSeconds, 10);
@@ -67,7 +65,7 @@ const submitSearch = (imageFileURL) =>
       return;
     }
     if (searchResult.docs && searchResult.docs.length <= 0) {
-      resolve({ text: "Sorry, I don't know what anime is it :\\" });
+      resolve({ text: "Sorry, I don't know what anime it is :\\" });
       return;
     }
     const {
@@ -198,20 +196,17 @@ const limitExceeded = async (message) => {
 const privateMessageHandler = async (message) => {
   const responding_msg = message.reply_to_message ? message.reply_to_message : message;
   if (!getImageFromMessage(responding_msg)) {
-    await bot.sendMessage(
-      message.chat.id,
-<<<<<<< HEAD
-      "You can Send / Forward anime screenshots to me. I can't get images from URLs, please send the image directly to me ;)"
-=======
-      infoText
->>>>>>> 0b6f7ef... Implemented much simpler URL search
-    );
+    await bot.sendMessage(message.chat.id, infoText);
     return;
   }
   if (await limitExceeded(message)) {
-    await bot.sendMessage(message.chat.id, "You exceeded the search limit, please try again later", {
-      reply_to_message_id: responding_msg.message_id,
-    });
+    await bot.sendMessage(
+      message.chat.id,
+      "You exceeded the search limit, please try again later",
+      {
+        reply_to_message_id: responding_msg.message_id,
+      }
+    );
     return;
   }
 
@@ -259,7 +254,6 @@ const privateMessageHandler = async (message) => {
   }
 };
 
-
 const groupMessageHandler = async (message) => {
   if (!messageIsMentioningBot(message)) {
     return;
@@ -276,13 +270,13 @@ const groupMessageHandler = async (message) => {
   }
 
   if (await limitExceeded(message)) {
-<<<<<<< HEAD
-    await bot.sendMessage(message.chat.id, "Your search limit exceeded, please try again later", {
-=======
-    await bot.sendMessage(message.chat.id, "You exceeded the search limit, please try again later", {
->>>>>>> 0b6f7ef... Implemented much simpler URL search
-      reply_to_message_id: responding_msg.message_id,
-    });
+    await bot.sendMessage(
+      message.chat.id,
+      "You exceeded the search limit, please try again later",
+      {
+        reply_to_message_id: responding_msg.message_id,
+      }
+    );
     return;
   }
 
