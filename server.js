@@ -37,13 +37,6 @@ const formatTime = (timeInSeconds) => {
   return `${hours}:${minutes}:${seconds}`;
 };
 
-const welcomeHandler = (message) => {
-  bot.sendMessage(
-    message.from.id,
-    "You can Send / Forward anime screenshots to me. I can't get images from URLs, please send the image directly to me ;)"
-  );
-};
-
 const submitSearch = (buffer) =>
   new Promise(async (resolve, reject) => {
     const form = new FormData();
@@ -336,7 +329,13 @@ const messageHandler = (message) => {
 
 bot.setWebHook(TELEGRAM_WEBHOOK);
 
-bot.onText(/\/start/, welcomeHandler);
+bot.onText(/\/start/, (message) => {
+  if (message.chat.type !== "private") return;
+  bot.sendMessage(
+    message.from.id,
+    "You can Send / Forward anime screenshots to me. I can't get images from URLs, please send the image directly to me ;)"
+  );
+});
 
 bot.on("message", messageHandler);
 
