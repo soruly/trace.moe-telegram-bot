@@ -184,13 +184,13 @@ const privateMessageHandler = async (message) => {
   const responding_msg = message.reply_to_message ? message.reply_to_message : message;
   if (!getImageFromMessage(responding_msg)) {
     await bot.sendMessage(
-      message.from.id,
+      message.chat.id,
       "You can Send / Forward anime screenshots to me. I can't get images from URLs, please send the image directly to me ;)"
     );
     return;
   }
   if (await limitExceeded(message)) {
-    await bot.sendMessage(message.from.id, "Search limit exceeded, please try again later", {
+    await bot.sendMessage(message.chat.id, "Search limit exceeded, please try again later", {
       reply_to_message_id: responding_msg.message_id,
     });
     return;
@@ -328,14 +328,6 @@ const messageHandler = (message) => {
 };
 
 bot.setWebHook(TELEGRAM_WEBHOOK);
-
-bot.onText(/\/start/, (message) => {
-  if (message.chat.type !== "private") return;
-  bot.sendMessage(
-    message.from.id,
-    "You can Send / Forward anime screenshots to me. I can't get images from URLs, please send the image directly to me ;)"
-  );
-});
 
 bot.on("message", messageHandler);
 
