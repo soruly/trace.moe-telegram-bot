@@ -198,13 +198,11 @@ const privateMessageHandler = async (message) => {
   const bot_message = await bot.sendMessage(message.chat.id, "Searching...", {
     reply_to_message_id: responding_msg.message_id,
   });
-  console.log(responding_msg);
   const json = await fetch(
     `https://api.telegram.org/bot${TELEGRAM_TOKEN}/getFile?file_id=${
       getImageFromMessage(responding_msg).file_id
     }`
   ).then((res) => res.json());
-  console.log(json);
 
   try {
     const result = await submitSearch(
@@ -256,26 +254,16 @@ const groupMessageHandler = async (message) => {
     return;
   }
 
-  const buffer = await fetch(
+  const json = await fetch(
     `https://api.telegram.org/bot${TELEGRAM_TOKEN}/getFile?file_id=${
       getImageFromMessage(responding_msg).file_id
     }`
-  )
-    .then((res) => res.json())
-    .then((json) =>
-      fetch(`https://api.telegram.org/file/bot${TELEGRAM_TOKEN}/${json.result.file_path}`)
-    )
-    .then((res) => res.buffer());
-
-  if (!buffer) {
-    await bot.sendMessage(message.chat.id, "Error downloading image", {
-      reply_to_message_id: responding_msg.message_id,
-    });
-    return;
-  }
+  ).then((res) => res.json());
 
   try {
-    const result = await submitSearch(buffer);
+    const result = await submitSearch(
+      `https://api.telegram.org/file/bot${TELEGRAM_TOKEN}/${json.result.file_path}`
+    );
     if (result.is_adult) {
       await bot.sendMessage(
         message.chat.id,
