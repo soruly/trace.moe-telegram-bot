@@ -1,7 +1,6 @@
 require("dotenv").config();
 const TelegramBot = require("node-telegram-bot-api");
 const fetch = require("node-fetch");
-const FormData = require("form-data");
 const redis = require("redis");
 const { promisify } = require("util");
 
@@ -37,16 +36,13 @@ const formatTime = (timeInSeconds) => {
   return `${hours}:${minutes}:${seconds}`;
 };
 
-const submitSearch = (buffer) =>
+const submitSearch = (imageFileURL) =>
   new Promise(async (resolve, reject) => {
-    const form = new FormData();
-    form.append("image", buffer, "blob");
     let response = {};
     try {
-      response = await fetch(`https://trace.moe/api/search?token=${TRACE_MOE_TOKEN}`, {
-        body: form,
-        method: "POST",
-      });
+      response = await fetch(
+        `https://trace.moe/api/search?token=${TRACE_MOE_TOKEN}&url=${imageFileURL}`
+      );
     } catch (error) {
       reject(error);
     }
@@ -140,11 +136,14 @@ const getImageFromMessage = (message) => {
   if (message.photo) {
     return message.photo.pop(); // get the last (largest) photo
   }
-  if (message.document && message.document.thumb) {
-    return message.document.thumb;
+  if (message.animation) {
+    return message.animation;
   }
   if (message.video && message.video.thumb) {
     return message.video.thumb;
+  }
+  if (message.document && message.document.thumb) {
+    return message.document.thumb;
   }
   return false;
 };
@@ -196,37 +195,21 @@ const privateMessageHandler = async (message) => {
     return;
   }
 
-  const [bot_message, buffer] = await Promise.all([
-    bot.sendMessage(message.chat.id, "Downloading the image...", {
-      reply_to_message_id: responding_msg.message_id,
-    }),
-    fetch(
-      `https://api.telegram.org/bot${TELEGRAM_TOKEN}/getFile?file_id=${
-        getImageFromMessage(responding_msg).file_id
-      }`
-    )
-      .then((res) => res.json())
-      .then((json) =>
-        fetch(`https://api.telegram.org/file/bot${TELEGRAM_TOKEN}/${json.result.file_path}`)
-      )
-      .then((res) => res.buffer()),
-  ]);
-
-  if (!buffer) {
-    await bot.editMessageText("Error downloading image", {
-      chat_id: bot_message.chat.id,
-      message_id: bot_message.message_id,
-    });
-  }
+  const bot_message = await bot.sendMessage(message.chat.id, "Searching...", {
+    reply_to_message_id: responding_msg.message_id,
+  });
+  console.log(responding_msg);
+  const json = await fetch(
+    `https://api.telegram.org/bot${TELEGRAM_TOKEN}/getFile?file_id=${
+      getImageFromMessage(responding_msg).file_id
+    }`
+  ).then((res) => res.json());
+  console.log(json);
 
   try {
-    const [_, result] = await Promise.all([
-      bot.editMessageText("Downloading the image...searching...", {
-        chat_id: bot_message.chat.id,
-        message_id: bot_message.message_id,
-      }),
-      submitSearch(buffer),
-    ]);
+    const result = await submitSearch(
+      `https://api.telegram.org/file/bot${TELEGRAM_TOKEN}/${json.result.file_path}`
+    );
     // better to send responses one-by-one
     await bot.editMessageText(result.text, {
       chat_id: bot_message.chat.id,
