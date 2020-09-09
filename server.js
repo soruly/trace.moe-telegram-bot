@@ -3,6 +3,11 @@ const TelegramBot = require("node-telegram-bot-api");
 const fetch = require("node-fetch");
 const redis = require("redis");
 const { promisify } = require("util");
+<<<<<<< HEAD
+=======
+const getUrls = require("get-urls");
+const { off } = require("process");
+>>>>>>> 0b6f7ef... Implemented much simpler URL search
 
 const { SERVER_PORT, REDIS_HOST, TELEGRAM_TOKEN, TELEGRAM_WEBHOOK, TRACE_MOE_TOKEN } = process.env;
 
@@ -130,7 +135,7 @@ const messageIsMute = (message) => {
   return message.text && message.text.toLowerCase().indexOf("mute") >= 0;
 };
 
-// The return type is PhotoSize
+// The return type is PhotoSize || String for URL
 // https://core.telegram.org/bots/api#photosize
 const getImageFromMessage = (message) => {
   if (message.photo) {
@@ -144,6 +149,17 @@ const getImageFromMessage = (message) => {
   }
   if (message.document && message.document.thumb) {
     return message.document.thumb;
+  }
+  // check if there's a URL and parsable text
+  if (message.entities && message.text) {
+    for (let i = 0; i < message.entities.length; i++) {
+      let ent = message.entities[i];
+      if (ent.type === "url") {
+        let offset = ent.offset;
+        let length = ent.length;
+        return message.text.substring(offset, offset + length + 1);
+      }
+    }
   }
   return false;
 };
@@ -184,12 +200,16 @@ const privateMessageHandler = async (message) => {
   if (!getImageFromMessage(responding_msg)) {
     await bot.sendMessage(
       message.chat.id,
+<<<<<<< HEAD
       "You can Send / Forward anime screenshots to me. I can't get images from URLs, please send the image directly to me ;)"
+=======
+      infoText
+>>>>>>> 0b6f7ef... Implemented much simpler URL search
     );
     return;
   }
   if (await limitExceeded(message)) {
-    await bot.sendMessage(message.chat.id, "Search limit exceeded, please try again later", {
+    await bot.sendMessage(message.chat.id, "You exceeded the search limit, please try again later", {
       reply_to_message_id: responding_msg.message_id,
     });
     return;
@@ -198,16 +218,23 @@ const privateMessageHandler = async (message) => {
   const bot_message = await bot.sendMessage(message.chat.id, "Searching...", {
     reply_to_message_id: responding_msg.message_id,
   });
-  const json = await fetch(
-    `https://api.telegram.org/bot${TELEGRAM_TOKEN}/getFile?file_id=${
-      getImageFromMessage(responding_msg).file_id
-    }`
-  ).then((res) => res.json());
+  let searchUrl = "";
+  const imgData = getImageFromMessage(responding_msg);
+  // Should only be string if there was a URL present
+  if (typeof imgData === "string") {
+    searchUrl = imgData;
+  } else {
+    const json = await fetch(
+      `https://api.telegram.org/bot${TELEGRAM_TOKEN}/getFile?file_id=${
+        getImageFromMessage(responding_msg).file_id
+      }`
+    ).then((res) => res.json());
+
+    searchUrl = `https://api.telegram.org/file/bot${TELEGRAM_TOKEN}/${json.result.file_path}`;
+  }
 
   try {
-    const result = await submitSearch(
-      `https://api.telegram.org/file/bot${TELEGRAM_TOKEN}/${json.result.file_path}`
-    );
+    const result = await submitSearch(searchUrl);
     // better to send responses one-by-one
     await bot.editMessageText(result.text, {
       chat_id: bot_message.chat.id,
@@ -232,6 +259,7 @@ const privateMessageHandler = async (message) => {
   }
 };
 
+
 const groupMessageHandler = async (message) => {
   if (!messageIsMentioningBot(message)) {
     return;
@@ -248,22 +276,33 @@ const groupMessageHandler = async (message) => {
   }
 
   if (await limitExceeded(message)) {
+<<<<<<< HEAD
     await bot.sendMessage(message.chat.id, "Your search limit exceeded, please try again later", {
+=======
+    await bot.sendMessage(message.chat.id, "You exceeded the search limit, please try again later", {
+>>>>>>> 0b6f7ef... Implemented much simpler URL search
       reply_to_message_id: responding_msg.message_id,
     });
     return;
   }
 
-  const json = await fetch(
-    `https://api.telegram.org/bot${TELEGRAM_TOKEN}/getFile?file_id=${
-      getImageFromMessage(responding_msg).file_id
-    }`
-  ).then((res) => res.json());
+  let searchUrl = "";
+  const imgData = getImageFromMessage(responding_msg);
+  // Should only be string if there was a URL present
+  if (typeof imgData === "string") {
+    searchUrl = imgData;
+  } else {
+    const json = await fetch(
+      `https://api.telegram.org/bot${TELEGRAM_TOKEN}/getFile?file_id=${
+        getImageFromMessage(responding_msg).file_id
+      }`
+    ).then((res) => res.json());
+
+    searchUrl = `https://api.telegram.org/file/bot${TELEGRAM_TOKEN}/${json.result.file_path}`;
+  }
 
   try {
-    const result = await submitSearch(
-      `https://api.telegram.org/file/bot${TELEGRAM_TOKEN}/${json.result.file_path}`
-    );
+    const result = await submitSearch(searchUrl);
     if (result.is_adult) {
       await bot.sendMessage(
         message.chat.id,
