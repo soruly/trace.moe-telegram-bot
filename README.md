@@ -35,3 +35,45 @@ _Note that the bot has no access to your messages before it is added to your gro
 - Sometimes video preview is missing
 
 ![Demo](demo.png)
+
+## How to host the bot on your own
+
+If you have privacy concern, you can host the bot on your own.
+
+Please read [Telegram's official tutorial to create a Bot](https://core.telegram.org/bots) first.
+
+You need to disable [Privacy Mode](https://core.telegram.org/bots#privacy-mode) if you want to use your bot in group chat.
+
+### Prerequisites
+
+- Node.js 12.x
+- Redis
+
+### Install
+
+```
+git clone https://github.com/soruly/trace.moe-telegram-bot.git
+cd trace.moe-telegram-bot
+npm install
+```
+
+### Configuration
+
+- Copy `.env.example` to `.env`
+- Edit `.env` as follows
+
+```
+SERVER_PORT=        # e.g. 3000
+REDIS_HOST=         # Usually 127.0.0.1
+TELEGRAM_TOKEN=     # e.g. 12345678:AAAAAAAAaA1AA1aa1Aaa1a_aAAaa-1aaAaa
+TELEGRAM_WEBHOOK=   # e.g. https://your.host.name/12345678:AAAAAAAAaA1AA1aa1Aaa1a_aAAaa-1aaAaa
+TRACE_MOE_TOKEN=    # Usually leave this empty
+```
+
+### Start server
+
+```
+node server.js
+```
+
+Optionally, you can use [pm2](https://pm2.keymetrics.io/) to run this in background.
