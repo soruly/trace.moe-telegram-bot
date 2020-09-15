@@ -13,6 +13,7 @@ The bot is live on telegram now https://telegram.me/WhatAnimeBot
 - Show anime titles in multiple languages
 - Telegram group support
 - Image, GIF, Video support
+- Support for URL to static image
 - Video preview
 
 ## How to use
@@ -31,7 +32,7 @@ _Note that the bot has no access to your messages before it is added to your gro
 
 ## Known issues
 - Stickers are not supported
-- Image URL is not supported
+- URL for gif or video is not supported
 - Sometimes video preview is missing
 
 ![Demo](demo.png)

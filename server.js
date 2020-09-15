@@ -24,6 +24,9 @@ const bot = new TelegramBot(TELEGRAM_TOKEN, {
   polling: false,
 });
 
+const infoText =
+  "You can Send / Forward anime screenshots to me. Directly send images, gifs, videos, or URLs for staic images. No URLs for gifs or videos, please ;)";
+
 const formatTime = (timeInSeconds) => {
   const sec_num = parseInt(timeInSeconds, 10);
   const hours = Math.floor(sec_num / 3600)
@@ -58,11 +61,11 @@ const submitSearch = (imageFileURL) =>
       return;
     }
     if (!searchResult.docs) {
-      resolve({ text: "Backend server error, please try again later." });
+      resolve({ text: "Error with search response. Is your query correctly formatted? Note: URL searches must be for static images, not gifs" });
       return;
     }
     if (searchResult.docs && searchResult.docs.length <= 0) {
-      resolve({ text: "Sorry, I don't know what anime is it :\\" });
+      resolve({ text: "Sorry, I don't know what anime it is :\\" });
       return;
     }
     const {
@@ -130,7 +133,7 @@ const messageIsMute = (message) => {
   return message.text && message.text.toLowerCase().indexOf("mute") >= 0;
 };
 
-// The return type is PhotoSize
+// The return type is PhotoSize || String for URL
 // https://core.telegram.org/bots/api#photosize
 const getImageFromMessage = (message) => {
   if (message.photo) {
@@ -144,6 +147,17 @@ const getImageFromMessage = (message) => {
   }
   if (message.document && message.document.thumb) {
     return message.document.thumb;
+  }
+  // check if there's a URL and parsable text
+  if (message.entities && message.text) {
+    for (let i = 0; i < message.entities.length; i++) {
+      let ent = message.entities[i];
+      if (ent.type === "url") {
+        let offset = ent.offset;
+        let length = ent.length;
+        return message.text.substring(offset, offset + length + 1);
+      }
+    }
   }
   return false;
 };
@@ -182,32 +196,40 @@ const limitExceeded = async (message) => {
 const privateMessageHandler = async (message) => {
   const responding_msg = message.reply_to_message ? message.reply_to_message : message;
   if (!getImageFromMessage(responding_msg)) {
-    await bot.sendMessage(
-      message.chat.id,
-      "You can Send / Forward anime screenshots to me. I can't get images from URLs, please send the image directly to me ;)"
-    );
+    await bot.sendMessage(message.chat.id, infoText);
     return;
   }
   if (await limitExceeded(message)) {
-    await bot.sendMessage(message.chat.id, "Search limit exceeded, please try again later", {
-      reply_to_message_id: responding_msg.message_id,
-    });
+    await bot.sendMessage(
+      message.chat.id,
+      "You exceeded the search limit, please try again later",
+      {
+        reply_to_message_id: responding_msg.message_id,
+      }
+    );
     return;
   }
 
   const bot_message = await bot.sendMessage(message.chat.id, "Searching...", {
     reply_to_message_id: responding_msg.message_id,
   });
-  const json = await fetch(
-    `https://api.telegram.org/bot${TELEGRAM_TOKEN}/getFile?file_id=${
-      getImageFromMessage(responding_msg).file_id
-    }`
-  ).then((res) => res.json());
+  let searchUrl = "";
+  const imgData = getImageFromMessage(responding_msg);
+  // Should only be string if there was a URL present
+  if (typeof imgData === "string") {
+    searchUrl = imgData;
+  } else {
+    const json = await fetch(
+      `https://api.telegram.org/bot${TELEGRAM_TOKEN}/getFile?file_id=${
+        getImageFromMessage(responding_msg).file_id
+      }`
+    ).then((res) => res.json());
+
+    searchUrl = `https://api.telegram.org/file/bot${TELEGRAM_TOKEN}/${json.result.file_path}`;
+  }
 
   try {
-    const result = await submitSearch(
-      `https://api.telegram.org/file/bot${TELEGRAM_TOKEN}/${json.result.file_path}`
-    );
+    const result = await submitSearch(searchUrl);
     // better to send responses one-by-one
     await bot.editMessageText(result.text, {
       chat_id: bot_message.chat.id,
@@ -248,22 +270,33 @@ const groupMessageHandler = async (message) => {
   }
 
   if (await limitExceeded(message)) {
-    await bot.sendMessage(message.chat.id, "Your search limit exceeded, please try again later", {
-      reply_to_message_id: responding_msg.message_id,
-    });
+    await bot.sendMessage(
+      message.chat.id,
+      "You exceeded the search limit, please try again later",
+      {
+        reply_to_message_id: responding_msg.message_id,
+      }
+    );
     return;
   }
 
-  const json = await fetch(
-    `https://api.telegram.org/bot${TELEGRAM_TOKEN}/getFile?file_id=${
-      getImageFromMessage(responding_msg).file_id
-    }`
-  ).then((res) => res.json());
+  let searchUrl = "";
+  const imgData = getImageFromMessage(responding_msg);
+  // Should only be string if there was a URL present
+  if (typeof imgData === "string") {
+    searchUrl = imgData;
+  } else {
+    const json = await fetch(
+      `https://api.telegram.org/bot${TELEGRAM_TOKEN}/getFile?file_id=${
+        getImageFromMessage(responding_msg).file_id
+      }`
+    ).then((res) => res.json());
+
+    searchUrl = `https://api.telegram.org/file/bot${TELEGRAM_TOKEN}/${json.result.file_path}`;
+  }
 
   try {
-    const result = await submitSearch(
-      `https://api.telegram.org/file/bot${TELEGRAM_TOKEN}/${json.result.file_path}`
-    );
+    const result = await submitSearch(searchUrl);
     if (result.is_adult) {
       await bot.sendMessage(
         message.chat.id,
