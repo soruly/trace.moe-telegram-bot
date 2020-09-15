@@ -154,7 +154,9 @@ const getImageFromMessage = async (message) => {
   }
   if (message.entities && message.text) {
     const urlEntity = message.entities.find((entity) => entity.type === "url");
-    return message.text.substring(urlEntity.offset, urlEntity.offset + urlEntity.length);
+    return urlEntity
+      ? message.text.substring(urlEntity.offset, urlEntity.offset + urlEntity.length)
+      : false;
   }
   return false;
 };
