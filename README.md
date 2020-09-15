@@ -1,4 +1,5 @@
 # trace.moe-telegram-bot
+
 [![Build Status](https://travis-ci.org/soruly/trace.moe-telegram-bot.svg?branch=master)](https://travis-ci.org/soruly/trace.moe-telegram-bot)
 [![Dependencies](https://david-dm.org/soruly/trace.moe-telegram-bot/status.svg)](https://david-dm.org/soruly/trace.moe-telegram-bot)
 [![license](https://img.shields.io/github/license/soruly/trace.moe-telegram-bot.svg)](https://raw.githubusercontent.com/soruly/trace.moe-telegram-bot/master/LICENSE)
@@ -10,13 +11,14 @@ This Telegram Bot can tell the anime when you send an screenshot to it
 The bot is live on telegram now https://telegram.me/WhatAnimeBot
 
 ## Features
+
 - Show anime titles in multiple languages
 - Telegram group support
-- Image, GIF, Video support
-- Support for URL to static image
+- Image, GIF, Video, URL support
 - Video preview
 
 ## How to use
+
 1. Start chatting with the bot https://telegram.me/WhatAnimeBot
 2. Send anime screenshots (images, gif or video) directly to the bot
 3. You may also forward images from other chats to the bot
@@ -24,6 +26,7 @@ The bot is live on telegram now https://telegram.me/WhatAnimeBot
 5. It will also send you a video preview of that scene
 
 ## How to use (in group)
+
 1. Add the bot `@WhatAnimeBot` to your group
 2. Reply to any group image, mention the bot with `@WhatAnimeBot`
 3. Wait for the bot to reply
@@ -31,8 +34,9 @@ The bot is live on telegram now https://telegram.me/WhatAnimeBot
 _Note that the bot has no access to your messages before it is added to your group_
 
 ## Known issues
+
 - Stickers are not supported
-- URL for gif or video is not supported
+- Image URL to large gif or video is not supported (limited by trace.moe API)
 - Sometimes video preview is missing
 
 ![Demo](demo.png)
@@ -49,8 +53,11 @@ You need to disable [Privacy Mode](https://core.telegram.org/bots#privacy-mode) 
 
 - Node.js 12.x
 - Redis
+- git
 
 ### Install
+
+Install Prerequisites first, then:
 
 ```
 git clone https://github.com/soruly/trace.moe-telegram-bot.git
