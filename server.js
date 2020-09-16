@@ -226,11 +226,13 @@ const privateMessageHandler = async (message) => {
     });
     if (result.video) {
       const videoLink = messageIsMute(message) ? `${result.video}&mute` : result.video;
-      try {
-        await bot.sendChatAction(message.chat.id, "upload_video");
-        await bot.sendVideo(message.chat.id, videoLink);
-      } catch (error) {
-        console.log(error);
+      if ((await fetch(videoLink, { method: "HEAD" })).ok) {
+        try {
+          await bot.sendChatAction(message.chat.id, "upload_video");
+          await bot.sendVideo(message.chat.id, videoLink);
+        } catch (error) {
+          console.log(error);
+        }
       }
     }
   } catch (error) {
