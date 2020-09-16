@@ -238,7 +238,8 @@ const privateMessageHandler = async (message) => {
     });
     if (result.video) {
       const videoLink = messageIsMute(message) ? `${result.video}&mute` : result.video;
-      if ((await fetch(videoLink, { method: "HEAD" })).ok) {
+      const video = await fetch(videoLink, { method: "HEAD" });
+      if (video.ok && video.headers.get("content-length") > 0) {
         try {
           await bot.sendChatAction(message.chat.id, "upload_video");
           await bot.sendVideo(message.chat.id, videoLink);
@@ -303,10 +304,13 @@ const groupMessageHandler = async (message) => {
     });
     if (result.video) {
       const videoLink = messageIsMute(message) ? `${result.video}&mute` : result.video;
-      await bot.sendChatAction(message.chat.id, "upload_video");
-      await bot.sendVideo(message.chat.id, videoLink, {
-        reply_to_message_id: responding_msg.message_id,
-      });
+      const video = await fetch(videoLink, { method: "HEAD" });
+      if (video.ok && video.headers.get("content-length") > 0) {
+        await bot.sendChatAction(message.chat.id, "upload_video");
+        await bot.sendVideo(message.chat.id, videoLink, {
+          reply_to_message_id: responding_msg.message_id,
+        });
+      }
     }
   } catch (error) {
     console.log(error);
