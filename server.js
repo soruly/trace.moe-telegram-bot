@@ -133,10 +133,13 @@ const messageIsMute = (message) => {
 
 // https://core.telegram.org/bots/api#photosize
 const getImageUrlFromPhotoSize = async (PhotoSize) => {
-  const json = await fetch(
-    `https://api.telegram.org/bot${TELEGRAM_TOKEN}/getFile?file_id=${PhotoSize.file_id}`
-  ).then((res) => res.json());
-  return `https://api.telegram.org/file/bot${TELEGRAM_TOKEN}/${json.result.file_path}`;
+  if (PhotoSize.file_id) {
+    const json = await fetch(
+      `https://api.telegram.org/bot${TELEGRAM_TOKEN}/getFile?file_id=${PhotoSize.file_id}`
+    ).then((res) => res.json());
+    return `https://api.telegram.org/file/bot${TELEGRAM_TOKEN}/${json.result.file_path}`;
+  }
+  return false;
 };
 
 const getImageFromMessage = async (message) => {
