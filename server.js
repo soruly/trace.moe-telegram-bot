@@ -36,12 +36,14 @@ const formatTime = (timeInSeconds) => {
   return `${hours}:${minutes}:${seconds}`;
 };
 
-const submitSearch = (imageFileURL) =>
+const submitSearch = (imageFileURL, useJC) =>
   new Promise(async (resolve, reject) => {
     let response = {};
     try {
       response = await fetch(
-        `https://trace.moe/api/search?token=${TRACE_MOE_TOKEN}&url=${imageFileURL}`
+        `https://trace.moe/api/search?token=${TRACE_MOE_TOKEN}&url=${imageFileURL}${
+          useJC ? "&method=jc" : ""
+        }`
       );
       if (response.status >= 400) {
         resolve({ text: `\`${await response.text()}\`` });
@@ -131,6 +133,13 @@ const messageIsMute = (message) => {
   return message.text && message.text.toLowerCase().indexOf("mute") >= 0;
 };
 
+const messageIsJC = (message) => {
+  if (message.caption) {
+    return message.caption.toLowerCase().indexOf("jc") >= 0;
+  }
+  return message.text && message.text.toLowerCase().indexOf("jc") >= 0;
+};
+
 // https://core.telegram.org/bots/api#photosize
 const getImageUrlFromPhotoSize = async (PhotoSize) => {
   if (PhotoSize && PhotoSize.file_id) {
@@ -217,7 +226,10 @@ const privateMessageHandler = async (message) => {
   });
 
   try {
-    const result = await submitSearch(await getImageFromMessage(responding_msg));
+    const result = await submitSearch(
+      await getImageFromMessage(responding_msg),
+      messageIsJC(responding_msg)
+    );
     // better to send responses one-by-one
     await bot.editMessageText(result.text, {
       chat_id: bot_message.chat.id,
@@ -271,7 +283,10 @@ const groupMessageHandler = async (message) => {
   }
 
   try {
-    const result = await submitSearch(await getImageFromMessage(responding_msg));
+    const result = await submitSearch(
+      await getImageFromMessage(responding_msg),
+      messageIsJC(responding_msg)
+    );
     if (result.is_adult) {
       await bot.sendMessage(
         message.chat.id,
