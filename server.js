@@ -133,7 +133,7 @@ const messageIsMute = (message) => {
 
 // https://core.telegram.org/bots/api#photosize
 const getImageUrlFromPhotoSize = async (PhotoSize) => {
-  if (PhotoSize.file_id) {
+  if (PhotoSize && PhotoSize.file_id) {
     const json = await fetch(
       `https://api.telegram.org/bot${TELEGRAM_TOKEN}/getFile?file_id=${PhotoSize.file_id}`
     ).then((res) => res.json());
