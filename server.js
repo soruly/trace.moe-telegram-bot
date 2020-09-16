@@ -46,6 +46,9 @@ const submitSearch = (imageFileURL, useJC) =>
       console.error(1046, e);
       return resolve({ text: "`trace.moe API error, please try again later.`" });
     });
+    if (!response) {
+      return resolve({ text: "`trace.moe API error, please try again later.`" });
+    }
     const searchResult = await response.json().catch((e) => {
       console.error(1050, e);
       return resolve({ text: "`trace.moe API error, please try again later.`" });
