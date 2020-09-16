@@ -206,7 +206,8 @@ const limitExceeded = async (message) => {
 
 const privateMessageHandler = async (message) => {
   const responding_msg = message.reply_to_message ? message.reply_to_message : message;
-  if (!(await getImageFromMessage(responding_msg))) {
+  const imageURL = await getImageFromMessage(responding_msg);
+  if (!imageURL) {
     await bot.sendMessage(message.chat.id, "You can Send / Forward anime screenshots to me.");
     return;
   }
@@ -226,10 +227,7 @@ const privateMessageHandler = async (message) => {
   });
 
   try {
-    const result = await submitSearch(
-      await getImageFromMessage(responding_msg),
-      messageIsJC(responding_msg)
-    );
+    const result = await submitSearch(imageURL, messageIsJC(responding_msg));
     // better to send responses one-by-one
     await bot.editMessageText(result.text, {
       chat_id: bot_message.chat.id,
@@ -262,7 +260,8 @@ const groupMessageHandler = async (message) => {
     return;
   }
   const responding_msg = message.reply_to_message ? message.reply_to_message : message;
-  if (!(await getImageFromMessage(responding_msg))) {
+  const imageURL = await getImageFromMessage(responding_msg);
+  if (!imageURL) {
     // cannot find image from the message mentioning the bot
     await bot.sendMessage(
       message.chat.id,
@@ -284,10 +283,7 @@ const groupMessageHandler = async (message) => {
   }
 
   try {
-    const result = await submitSearch(
-      await getImageFromMessage(responding_msg),
-      messageIsJC(responding_msg)
-    );
+    const result = await submitSearch(imageURL, messageIsJC(responding_msg));
     if (result.is_adult) {
       await bot.sendMessage(
         message.chat.id,
