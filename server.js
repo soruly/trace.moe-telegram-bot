@@ -25,7 +25,7 @@ const bot = new TelegramBot(TELEGRAM_TOKEN, {
 });
 
 const formatTime = (timeInSeconds) => {
-  const sec_num = parseInt(timeInSeconds, 10);
+  const sec_num = Number(timeInSeconds);
   const hours = Math.floor(sec_num / 3600)
     .toString()
     .padStart(2, "0");
@@ -38,35 +38,26 @@ const formatTime = (timeInSeconds) => {
 
 const submitSearch = (imageFileURL, useJC) =>
   new Promise(async (resolve, reject) => {
-    let response = {};
-    try {
-      response = await fetch(
-        `https://trace.moe/api/search?token=${TRACE_MOE_TOKEN}&url=${imageFileURL}${
-          useJC ? "&method=jc" : ""
-        }`
-      );
-      if (response.status >= 400) {
-        resolve({ text: `\`${await response.text()}\`` });
-      }
-    } catch (error) {
-      reject(error);
-    }
-    let searchResult = {};
-    try {
-      searchResult = await response.json();
-    } catch (e) {
-      resolve({ text: "trace.moe API error, please try again later." });
-      return;
+    const response = await fetch(
+      `https://trace.moe/api/search?token=${TRACE_MOE_TOKEN}&url=${imageFileURL}${
+        useJC ? "&method=jc" : ""
+      }`
+    ).catch((e) => {
+      console.error(1046, e);
+      return resolve({ text: "`trace.moe API error, please try again later.`" });
+    });
+    const searchResult = await response.json().catch((e) => {
+      console.error(1050, e);
+      return resolve({ text: "`trace.moe API error, please try again later.`" });
+    });
+    if (response.status >= 400) {
+      return resolve({ text: `\`${searchResult}\`` });
     }
     if (!searchResult.docs) {
-      resolve({
-        text: "trace.moe API error, please try again later.",
-      });
-      return;
+      return resolve({ text: "`trace.moe API error, please try again later.`" });
     }
     if (searchResult.docs && searchResult.docs.length <= 0) {
-      resolve({ text: "Sorry, I don't know what anime it is :\\" });
-      return;
+      return resolve({ text: "Cannot find any results from trace.moe" });
     }
     const {
       is_adult,
@@ -103,7 +94,7 @@ const submitSearch = (imageFileURL, useJC) =>
       `t=${at}&`,
       `token=${tokenthumb}`,
     ].join("");
-    resolve({
+    return resolve({
       is_adult,
       text,
       video: videoLink,
@@ -145,8 +136,14 @@ const getImageUrlFromPhotoSize = async (PhotoSize) => {
   if (PhotoSize && PhotoSize.file_id) {
     const json = await fetch(
       `https://api.telegram.org/bot${TELEGRAM_TOKEN}/getFile?file_id=${PhotoSize.file_id}`
-    ).then((res) => res.json());
-    return `https://api.telegram.org/file/bot${TELEGRAM_TOKEN}/${json.result.file_path}`;
+    )
+      .then((res) => res.json())
+      .catch((e) => {
+        console.error(1142, e);
+      });
+    return json && json.result && json.result.file_path
+      ? `https://api.telegram.org/file/bot${TELEGRAM_TOKEN}/${json.result.file_path}`
+      : false;
   }
   return false;
 };
@@ -182,7 +179,7 @@ const limitExceeded = async (message) => {
       `telegram_${message.from.id}_limit`,
       limit,
       "EX",
-      parseInt(limitTTL, 10) > 0 ? parseInt(limitTTL, 10) : 60
+      Number(limitTTL) > 0 ? Number(limitTTL) : 60
     );
     if (limit < 0) {
       return true;
@@ -195,7 +192,7 @@ const limitExceeded = async (message) => {
       `telegram_${message.from.id}_quota`,
       quota,
       "EX",
-      parseInt(quotaTTL, 10) > 0 ? parseInt(quotaTTL, 10) : 86400
+      Number(quotaTTL) > 0 ? Number(quotaTTL) : 86400
     );
     if (quota < 0) {
       return true;
@@ -226,32 +223,30 @@ const privateMessageHandler = async (message) => {
     reply_to_message_id: responding_msg.message_id,
   });
 
-  try {
-    const result = await submitSearch(imageURL, messageIsJC(responding_msg));
-    // better to send responses one-by-one
-    await bot.editMessageText(result.text, {
+  const result = await submitSearch(imageURL, messageIsJC(responding_msg));
+  // better to send responses one-by-one
+  await bot
+    .editMessageText(result.text, {
       chat_id: bot_message.chat.id,
       message_id: bot_message.message_id,
       parse_mode: "Markdown",
+    })
+    .catch((e) => {
+      console.error(1227, e);
     });
-    if (result.video) {
-      const videoLink = messageIsMute(message) ? `${result.video}&mute` : result.video;
-      const video = await fetch(videoLink, { method: "HEAD" });
-      if (video.ok && video.headers.get("content-length") > 0) {
-        try {
-          await bot.sendChatAction(message.chat.id, "upload_video");
-          await bot.sendVideo(message.chat.id, videoLink);
-        } catch (error) {
-          console.log(error);
-        }
-      }
+  if (result.video) {
+    const videoLink = messageIsMute(message) ? `${result.video}&mute` : result.video;
+    const video = await fetch(videoLink, { method: "HEAD" }).catch((e) => {
+      console.error(1232, e);
+    });
+    if (video.ok && video.headers.get("content-length") > 0) {
+      await bot.sendChatAction(message.chat.id, "upload_video").catch((e) => {
+        console.error(1236, e);
+      });
+      await bot.sendVideo(message.chat.id, videoLink).catch((e) => {
+        console.error(1239, e);
+      });
     }
-  } catch (error) {
-    await bot.editMessageText("Server error", {
-      chat_id: bot_message.chat.id,
-      message_id: bot_message.message_id,
-    });
-    console.log(error);
   }
 };
 
@@ -282,34 +277,48 @@ const groupMessageHandler = async (message) => {
     return;
   }
 
-  try {
-    const result = await submitSearch(imageURL, messageIsJC(responding_msg));
-    if (result.is_adult) {
-      await bot.sendMessage(
+  const result = await submitSearch(imageURL, messageIsJC(responding_msg)).catch((e) => {
+    console.error(1273, e);
+  });
+  if (result.is_adult) {
+    await bot
+      .sendMessage(
         message.chat.id,
         "I've found an adult result 😳\nPlease forward it to me via Private Chat 😏",
         {
           reply_to_message_id: responding_msg.message_id,
         }
-      );
-      return;
-    }
-    await bot.sendMessage(message.chat.id, result.text, {
+      )
+      .catch((e) => {
+        console.error(1285, e);
+      });
+    return;
+  }
+  await bot
+    .sendMessage(message.chat.id, result.text, {
       reply_to_message_id: responding_msg.message_id,
       parse_mode: "Markdown",
+    })
+    .catch((e) => {
+      console.error(1295, e);
     });
-    if (result.video) {
-      const videoLink = messageIsMute(message) ? `${result.video}&mute` : result.video;
-      const video = await fetch(videoLink, { method: "HEAD" });
-      if (video.ok && video.headers.get("content-length") > 0) {
-        await bot.sendChatAction(message.chat.id, "upload_video");
-        await bot.sendVideo(message.chat.id, videoLink, {
+  if (result.video) {
+    const videoLink = messageIsMute(message) ? `${result.video}&mute` : result.video;
+    const video = await fetch(videoLink, { method: "HEAD" }).catch((e) => {
+      console.error(1300, e);
+    });
+    if (video.ok && video.headers.get("content-length") > 0) {
+      await bot.sendChatAction(message.chat.id, "upload_video").catch((e) => {
+        console.error(1304, e);
+      });
+      await bot
+        .sendVideo(message.chat.id, videoLink, {
           reply_to_message_id: responding_msg.message_id,
+        })
+        .catch((e) => {
+          console.error(1311, e);
         });
-      }
     }
-  } catch (error) {
-    console.log(error);
   }
 };
 
