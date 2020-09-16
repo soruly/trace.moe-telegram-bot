@@ -32,7 +32,7 @@ const formatTime = (timeInSeconds) => {
   const minutes = Math.floor((sec_num - hours * 3600) / 60)
     .toString()
     .padStart(2, "0");
-  const seconds = (sec_num - hours * 3600 - minutes * 60).toString().padStart(2, "0");
+  const seconds = (sec_num - hours * 3600 - minutes * 60).toFixed(0).padStart(2, "0");
   return `${hours}:${minutes}:${seconds}`;
 };
 
