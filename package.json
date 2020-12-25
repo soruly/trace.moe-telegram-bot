@@ -14,7 +14,7 @@
   "dependencies": {
     "dotenv": "^8.2.0",
     "node-fetch": "^2.6.1",
-    "node-telegram-bot-api": "^0.50.0",
+    "node-telegram-bot-api": "^0.51.0",
     "redis": "^3.0.2"
   },
   "devDependencies": {
