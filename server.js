@@ -1,8 +1,8 @@
-require("dotenv").config();
-const TelegramBot = require("node-telegram-bot-api");
-const fetch = require("node-fetch");
-const redis = require("redis");
-const { promisify } = require("util");
+import "dotenv/config.js";
+import { promisify } from "util";
+import fetch from "node-fetch";
+import TelegramBot from "node-telegram-bot-api";
+import * as redis from "redis";
 
 const { SERVER_PORT, REDIS_HOST, TELEGRAM_TOKEN, TELEGRAM_WEBHOOK, TRACE_MOE_TOKEN } = process.env;
 
@@ -337,8 +337,6 @@ bot.setWebHook(TELEGRAM_WEBHOOK);
 
 bot.on("message", messageHandler);
 
-(async () => {
-  const result = await bot.getMe();
-  bot_name = result.username;
-  console.log(JSON.stringify(result, null, 2));
-})();
+const result = await bot.getMe();
+bot_name = result.username;
+console.log(JSON.stringify(result, null, 2));

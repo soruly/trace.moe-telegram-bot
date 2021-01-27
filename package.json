@@ -3,6 +3,7 @@
   "version": "2.1.2",
   "description": "",
   "main": "server.js",
+  "type": "module",
   "scripts": {
     "prettier": "prettier",
     "format": "prettier --write \"**/*.js\"",
