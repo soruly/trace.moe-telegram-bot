@@ -95,7 +95,8 @@ const submitSearch = (imageFileURL, useJC) =>
     const videoLink = [
       `https://media.trace.moe/video/${anilist_id}/${encodeURIComponent(filename)}?`,
       `t=${at}&`,
-      `token=${tokenthumb}`,
+      `token=${tokenthumb}&`,
+      `size=l`,
     ].join("");
     return resolve({
       is_adult,
