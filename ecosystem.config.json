@@ -1,0 +1,11 @@
+{
+  "apps": [
+    {
+      "name": "trace.moe-telegram-bot",
+      "script": "server.js",
+      "instances": 4,
+      "autorestart": true,
+      "exec_mode": "cluster"
+    }
+  ]
+}

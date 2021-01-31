@@ -5,6 +5,11 @@
   "main": "server.js",
   "type": "module",
   "scripts": {
+    "start": "pm2 start ecosystem.config.json",
+    "stop": "pm2 stop ecosystem.config.json",
+    "restart": "pm2 restart ecosystem.config.json",
+    "reload": "pm2 reload ecosystem.config.json",
+    "delete": "pm2 delete ecosystem.config.json",
     "prettier": "prettier",
     "format": "prettier --write \"**/*.js\"",
     "lint": "prettier --check \"**/*.js\"",
