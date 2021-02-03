@@ -90,7 +90,8 @@ const submitSearch = (imageFileURL, useJC) =>
       .map((t) => `\`${t}\``)
       .join("\n");
     text += "\n";
-    text += `\`EP#${episode.toString().padStart(2, "0")} ${formatTime(at)}\`\n`;
+    text += `\`${filename}\`\n`;
+    text += `\`${formatTime(at)}\`\n`;
     text += `\`${(similarity * 100).toFixed(1)}% similarity\`\n`;
     const videoLink = [
       `https://media.trace.moe/video/${anilist_id}/${encodeURIComponent(filename)}?`,
