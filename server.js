@@ -90,7 +90,7 @@ const submitSearch = (imageFileURL, useJC) =>
       .map((t) => `\`${t}\``)
       .join("\n");
     text += "\n";
-    text += `\`${filename}\`\n`;
+    text += `\`${filename.replace(/`/g, "``")}\`\n`;
     text += `\`${formatTime(at)}\`\n`;
     text += `\`${(similarity * 100).toFixed(1)}% similarity\`\n`;
     const videoLink = [
