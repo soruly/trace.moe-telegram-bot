@@ -1,10 +1,8 @@
 # trace.moe-telegram-bot
 
-[![Build Status](https://travis-ci.org/soruly/trace.moe-telegram-bot.svg?branch=master)](https://travis-ci.org/soruly/trace.moe-telegram-bot)
-[![Dependencies](https://david-dm.org/soruly/trace.moe-telegram-bot/status.svg)](https://david-dm.org/soruly/trace.moe-telegram-bot)
-[![license](https://img.shields.io/github/license/soruly/trace.moe-telegram-bot.svg)](https://raw.githubusercontent.com/soruly/trace.moe-telegram-bot/master/LICENSE)
-[![Discord](https://img.shields.io/discord/437578425767559188.svg)](https://discord.gg/K9jn6Kj)
-[![Donate](https://img.shields.io/badge/donate-patreon-orange.svg)](https://www.patreon.com/soruly)
+[![License](https://img.shields.io/github/license/soruly/trace.moe-telegram-bot.svg?style=flat-square)](https://github.com/soruly/trace.moe-telegram-bot/blob/master/LICENSE)
+[![GitHub Workflow Status](https://img.shields.io/github/workflow/status/soruly/trace.moe-telegram-bot/Node.js%20CI?style=flat-square)](https://github.com/soruly/trace.moe-telegram-bot/actions)
+[![Discord](https://img.shields.io/discord/437578425767559188.svg?style=flat-square)](https://discord.gg/K9jn6Kj)
 
 This Telegram Bot can tell the anime when you send an screenshot to it
 
