@@ -39,7 +39,7 @@ const formatTime = (timeInSeconds) => {
 const submitSearch = (imageFileURL, useJC) =>
   new Promise(async (resolve, reject) => {
     const response = await fetch(
-      `https://api.trace.moe/search?token=${TRACE_MOE_TOKEN}&url=${imageFileURL}${
+      `https://api.trace.moe/search?token=${TRACE_MOE_TOKEN}&url=${imageFileURL}&cutBorders=1${
         useJC ? "&method=jc" : ""
       }`
     ).catch((e) => {
