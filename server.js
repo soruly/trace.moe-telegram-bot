@@ -39,7 +39,7 @@ const formatTime = (timeInSeconds) => {
 const submitSearch = (imageFileURL, useJC) =>
   new Promise(async (resolve, reject) => {
     const response = await fetch(
-      `https://trace.moe/api/search?token=${TRACE_MOE_TOKEN}&url=${imageFileURL}${
+      `https://api.trace.moe/search?token=${TRACE_MOE_TOKEN}&url=${imageFileURL}${
         useJC ? "&method=jc" : ""
       }`
     ).catch((e) => {
@@ -60,30 +60,30 @@ const submitSearch = (imageFileURL, useJC) =>
           : `Error: HTTP ${response.status}`,
       });
     }
-    if (!searchResult.docs) {
+    if (!searchResult.result) {
       return resolve({ text: "`trace.moe API error, please try again later.`" });
     }
-    if (searchResult.docs && searchResult.docs.length <= 0) {
+    if (searchResult.result && searchResult.result.length <= 0) {
       return resolve({ text: "Cannot find any results from trace.moe" });
     }
     const {
       is_adult,
       similarity,
-      title,
+      title_native,
       title_english,
       title_chinese,
       title_romaji,
       anilist_id,
-      filename,
-      episode,
-      at,
-      tokenthumb,
-    } = searchResult.docs[0];
+      file,
+      from,
+      to,
+      video,
+    } = searchResult.result[0];
     let text = "";
     if (similarity < 0.92) {
       text = "I have low confidence in this, wild guess:\n";
     }
-    text += [title, title_chinese, title_romaji, title_english]
+    text += [title_native, title_chinese, title_romaji, title_english]
       .filter((e) => e)
       .reduce(
         // deduplicate titles
@@ -94,19 +94,13 @@ const submitSearch = (imageFileURL, useJC) =>
       .map((t) => `\`${t}\``)
       .join("\n");
     text += "\n";
-    text += `\`${filename.replace(/`/g, "``")}\`\n`;
-    text += `\`${formatTime(at)}\`\n`;
+    text += `\`${file.replace(/`/g, "``")}\`\n`;
+    text += `\`${formatTime(from)}\`\n`;
     text += `\`${(similarity * 100).toFixed(1)}% similarity\`\n`;
-    const videoLink = [
-      `https://media.trace.moe/video/${anilist_id}/${encodeURIComponent(filename)}?`,
-      `t=${at}&`,
-      `token=${tokenthumb}&`,
-      `size=l`,
-    ].join("");
     return resolve({
       is_adult,
       text,
-      video: videoLink,
+      video: `${video}&size=l`,
     });
   });
 
