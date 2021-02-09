@@ -54,7 +54,11 @@ const submitSearch = (imageFileURL, useJC) =>
       return resolve({ text: "`trace.moe API error, please try again later.`" });
     });
     if (response.status >= 400) {
-      return resolve({ text: `\`${searchResult.replace(TELEGRAM_TOKEN, "{TELEGRAM_TOKEN}")}\`` });
+      return resolve({
+        text: searchResult
+          ? `\`${searchResult.replace(TELEGRAM_TOKEN, "{TELEGRAM_TOKEN}")}\``
+          : `Error: HTTP ${response.status}`,
+      });
     }
     if (!searchResult.docs) {
       return resolve({ text: "`trace.moe API error, please try again later.`" });
