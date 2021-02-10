@@ -39,9 +39,9 @@ const formatTime = (timeInSeconds) => {
 const submitSearch = (imageFileURL, useJC) =>
   new Promise(async (resolve, reject) => {
     const response = await fetch(
-      `https://api.trace.moe/search?token=${TRACE_MOE_TOKEN}&url=${imageFileURL}&cutBorders=1${
-        useJC ? "&method=jc" : ""
-      }`
+      `https://api.trace.moe/search?token=${TRACE_MOE_TOKEN}&url=${encodeURIComponent(
+        imageFileURL
+      )}&cutBorders=1${useJC ? "&method=jc" : ""}`
     ).catch((e) => {
       console.error(1046, e);
       return resolve({ text: "`trace.moe API error, please try again later.`" });
@@ -53,15 +53,12 @@ const submitSearch = (imageFileURL, useJC) =>
       console.error(1050, e);
       return resolve({ text: "`trace.moe API error, please try again later.`" });
     });
-    if (response.status >= 400) {
+    if (response.status >= 400 || searchResult.error) {
       return resolve({
-        text: searchResult
-          ? `\`${searchResult.replace(TELEGRAM_TOKEN, "{TELEGRAM_TOKEN}")}\``
+        text: searchResult.error
+          ? `\`${searchResult.error.replace(/TELEGRAM_TOKEN/g, "{TELEGRAM_TOKEN}")}\``
           : `Error: HTTP ${response.status}`,
       });
-    }
-    if (!searchResult.result) {
-      return resolve({ text: "`trace.moe API error, please try again later.`" });
     }
     if (searchResult.result && searchResult.result.length <= 0) {
       return resolve({ text: "Cannot find any results from trace.moe" });
