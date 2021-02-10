@@ -60,7 +60,7 @@ const submitSearch = (imageFileURL, useJC) =>
           : `Error: HTTP ${response.status}`,
       });
     }
-    if (searchResult.result && searchResult.result.length <= 0) {
+    if (searchResult?.result?.length <= 0) {
       return resolve({ text: "Cannot find any results from trace.moe" });
     }
     const {
@@ -121,19 +121,19 @@ const messageIsMute = (message) => {
   if (message.caption) {
     return message.caption.toLowerCase().indexOf("mute") >= 0;
   }
-  return message.text && message.text.toLowerCase().indexOf("mute") >= 0;
+  return message.text?.toLowerCase().indexOf("mute") >= 0;
 };
 
 const messageIsJC = (message) => {
   if (message.caption) {
     return message.caption.toLowerCase().indexOf("jc") >= 0;
   }
-  return message.text && message.text.toLowerCase().indexOf("jc") >= 0;
+  return message.text?.toLowerCase().indexOf("jc") >= 0;
 };
 
 // https://core.telegram.org/bots/api#photosize
 const getImageUrlFromPhotoSize = async (PhotoSize) => {
-  if (PhotoSize && PhotoSize.file_id) {
+  if (PhotoSize?.file_id) {
     const json = await fetch(
       `https://api.telegram.org/bot${TELEGRAM_TOKEN}/getFile?file_id=${PhotoSize.file_id}`
     )
@@ -141,7 +141,7 @@ const getImageUrlFromPhotoSize = async (PhotoSize) => {
       .catch((e) => {
         console.error(1142, e);
       });
-    return json && json.result && json.result.file_path
+    return json?.result?.file_path
       ? `https://api.telegram.org/file/bot${TELEGRAM_TOKEN}/${json.result.file_path}`
       : false;
   }
@@ -155,10 +155,10 @@ const getImageFromMessage = async (message) => {
   if (message.animation) {
     return await getImageUrlFromPhotoSize(message.animation);
   }
-  if (message.video && message.video.thumb) {
+  if (message.video?.thumb) {
     return await getImageUrlFromPhotoSize(message.video.thumb);
   }
-  if (message.document && message.document.thumb) {
+  if (message.document?.thumb) {
     return await getImageUrlFromPhotoSize(message.document.thumb);
   }
   if (message.entities && message.text) {
