@@ -39,9 +39,12 @@ const formatTime = (timeInSeconds) => {
 const submitSearch = (imageFileURL, useJC) =>
   new Promise(async (resolve, reject) => {
     const response = await fetch(
-      `https://api.trace.moe/search?key=${TRACE_MOE_KEY}&url=${encodeURIComponent(
-        imageFileURL
-      )}&cutBorders=1${useJC ? "&method=jc" : ""}`
+      `https://api.trace.moe/search?url=${encodeURIComponent(imageFileURL)}&cutBorders=1${
+        useJC ? "&method=jc" : ""
+      }`,
+      {
+        headers: { "x-trace-key": TRACE_MOE_KEY },
+      }
     ).catch((e) => {
       console.error(1046, e);
       return resolve({ text: "`trace.moe API error, please try again later.`" });
