@@ -67,14 +67,13 @@ const submitSearch = (imageFileURL, useJC) =>
       return resolve({ text: "Cannot find any results from trace.moe" });
     }
     const {
-      is_adult,
+      anilist: {
+        id,
+        isAdult,
+        title: { chinese, english, native, romaji },
+      },
       similarity,
-      title_native,
-      title_english,
-      title_chinese,
-      title_romaji,
-      anilist_id,
-      file,
+      filename,
       from,
       to,
       video,
@@ -83,7 +82,7 @@ const submitSearch = (imageFileURL, useJC) =>
     if (similarity < 0.92) {
       text = "I have low confidence in this, wild guess:\n";
     }
-    text += [title_native, title_chinese, title_romaji, title_english]
+    text += [native, chinese, romaji, english]
       .filter((e) => e)
       .reduce(
         // deduplicate titles
@@ -94,11 +93,11 @@ const submitSearch = (imageFileURL, useJC) =>
       .map((t) => `\`${t}\``)
       .join("\n");
     text += "\n";
-    text += `\`${file.replace(/`/g, "``")}\`\n`;
+    text += `\`${filename.replace(/`/g, "``")}\`\n`;
     text += `\`${formatTime(from)}\`\n`;
     text += `\`${(similarity * 100).toFixed(1)}% similarity\`\n`;
     return resolve({
-      is_adult,
+      isAdult,
       text,
       video: `${video}&size=l`,
     });
@@ -283,7 +282,7 @@ const groupMessageHandler = async (message) => {
   const result = await submitSearch(imageURL, messageIsJC(responding_msg)).catch((e) => {
     console.error(1273, e);
   });
-  if (result.is_adult) {
+  if (result.isAdult) {
     await bot
       .sendMessage(
         message.chat.id,
