@@ -4,7 +4,7 @@ import fetch from "node-fetch";
 import TelegramBot from "node-telegram-bot-api";
 import * as redis from "redis";
 
-const { SERVER_PORT, REDIS_HOST, TELEGRAM_TOKEN, TELEGRAM_WEBHOOK, TRACE_MOE_TOKEN } = process.env;
+const { SERVER_PORT, REDIS_HOST, TELEGRAM_TOKEN, TELEGRAM_WEBHOOK, TRACE_MOE_KEY } = process.env;
 
 let redisClient = null;
 let getAsync = null;
@@ -39,7 +39,7 @@ const formatTime = (timeInSeconds) => {
 const submitSearch = (imageFileURL, useJC) =>
   new Promise(async (resolve, reject) => {
     const response = await fetch(
-      `https://api.trace.moe/search?token=${TRACE_MOE_TOKEN}&url=${encodeURIComponent(
+      `https://api.trace.moe/search?key=${TRACE_MOE_KEY}&url=${encodeURIComponent(
         imageFileURL
       )}&cutBorders=1${useJC ? "&method=jc" : ""}`
     ).catch((e) => {
