@@ -12,7 +12,7 @@ The bot is live on telegram now https://telegram.me/WhatAnimeBot
 
 - Show anime titles in multiple languages
 - Telegram group support
-- Image, GIF, Video, URL support
+- Image, GIF, Video, URL support (stickers are not supported)
 - Video preview
 
 ## How to use
@@ -31,12 +31,6 @@ The bot is live on telegram now https://telegram.me/WhatAnimeBot
 
 _Note that the bot has no access to your messages before it is added to your group_
 
-## Known issues
-
-- Stickers are not supported
-- Image URL to large gif or video is not supported (limited by trace.moe API)
-- Sometimes video preview is missing
-
 ![Demo](demo.png)
 
 ## How to host the bot on your own
@@ -49,9 +43,10 @@ You need to disable [Privacy Mode](https://core.telegram.org/bots#privacy-mode) 
 
 ### Prerequisites
 
-- Node.js 12.x
+- Node.js 14.x
 - Redis
 - git
+- [pm2](https://pm2.keymetrics.io/) (optional)
 
 ### Install
 
@@ -82,4 +77,16 @@ TRACE_MOE_KEY=      # Usually leave this empty
 node server.js
 ```
 
-Optionally, you can use [pm2](https://pm2.keymetrics.io/) to run this in background.
+You also can use pm2 to run this in background in cluster mode.
+
+Use below commands to start / restart / stop server.
+
+```
+npm run start
+npm run stop
+npm run reload
+npm run restart
+npm run delete
+```
+
+To change the number of nodejs instances, edit ecosystem.config.json
