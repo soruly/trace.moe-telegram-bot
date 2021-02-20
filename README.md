@@ -8,6 +8,10 @@ This Telegram Bot can tell the anime when you send an screenshot to it
 
 The bot is live on telegram now https://telegram.me/WhatAnimeBot
 
+## Demo (YouTube)
+
+[![](https://img.youtube.com/vi/5C9nD5dtRrY/0.jpg)](https://www.youtube.com/watch?v=5C9nD5dtRrY)
+
 ## Features
 
 - Show anime titles in multiple languages
@@ -30,8 +34,6 @@ The bot is live on telegram now https://telegram.me/WhatAnimeBot
 3. Wait for the bot to reply
 
 _Note that the bot has no access to your messages before it is added to your group_
-
-![Demo](demo.png)
 
 ## How to host the bot on your own
 
