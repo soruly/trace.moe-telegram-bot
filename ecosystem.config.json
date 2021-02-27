@@ -3,7 +3,7 @@
     {
       "name": "trace.moe-telegram-bot",
       "script": "server.js",
-      "instances": 4,
+      "instances": 1,
       "autorestart": true,
       "exec_mode": "cluster"
     }

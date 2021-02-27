@@ -46,16 +46,21 @@ const submitSearch = (imageFileURL, useJC) =>
         headers: { "x-trace-key": TRACE_MOE_KEY },
       }
     ).catch((e) => {
-      console.error(1046, e);
       return resolve({ text: "`trace.moe API error, please try again later.`" });
     });
     if (!response) {
       return resolve({ text: "`trace.moe API error, please try again later.`" });
     }
-    const searchResult = await response.json().catch((e) => {
-      console.error(1050, e);
+    if (response.status === 504) {
+      return resolve({ text: "`trace.moe server is busy, please try again later.`" });
+    }
+    if (response.status === 502) {
+      return resolve({ text: "`trace.moe database is offline, please try again later.`" });
+    }
+    if (response.status >= 400) {
       return resolve({ text: "`trace.moe API error, please try again later.`" });
-    });
+    }
+    const searchResult = await response.json();
     if (response.status >= 400 || searchResult.error) {
       return resolve({
         text: searchResult.error
