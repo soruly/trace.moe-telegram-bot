@@ -54,11 +54,8 @@ const submitSearch = (imageFileURL, useJC) =>
     if (!response) {
       return resolve({ text: "`trace.moe API error, please try again later.`" });
     }
-    if (response.status === 504) {
+    if ([502, 503, 504].includes(response.status)) {
       return resolve({ text: "`trace.moe server is busy, please try again later.`" });
-    }
-    if (response.status === 502) {
-      return resolve({ text: "`trace.moe database is offline, please try again later.`" });
     }
     if (response.status >= 400) {
       return resolve({ text: "`trace.moe API error, please try again later.`" });
@@ -87,9 +84,6 @@ const submitSearch = (imageFileURL, useJC) =>
       video,
     } = searchResult.result[0];
     let text = "";
-    if (similarity < 0.92) {
-      text = "I have low confidence in this, wild guess:\n";
-    }
     text += [native, chinese, romaji, english]
       .filter((e) => e)
       .reduce(
