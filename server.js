@@ -39,9 +39,12 @@ const formatTime = (timeInSeconds) => {
 const submitSearch = (imageFileURL, useJC) =>
   new Promise(async (resolve, reject) => {
     const response = await fetch(
-      `https://api.trace.moe/search?url=${encodeURIComponent(imageFileURL)}&cutBorders=1${
-        useJC ? "&method=jc" : ""
-      }`,
+      `https://api.trace.moe/search?${[
+        `url=${encodeURIComponent(imageFileURL)}`,
+        "cutBorders=1",
+        "info=basic",
+        useJC ? "&method=jc" : "",
+      ].join("&")}`,
       {
         headers: { "x-trace-key": TRACE_MOE_KEY },
       }
