@@ -1,5 +1,6 @@
 import "dotenv/config.js";
 import { promisify } from "util";
+import fs from "fs";
 import fetch from "node-fetch";
 import TelegramBot from "node-telegram-bot-api";
 import * as redis from "redis";
@@ -36,10 +37,17 @@ const formatTime = (timeInSeconds) => {
   return `${hours}:${minutes}:${seconds}`;
 };
 
-const submitSearch = (imageFileURL, useJC) =>
+const submitSearch = (imageFileURL, useJC, message) =>
   new Promise(async (resolve, reject) => {
+    fs.appendFileSync(
+      "log.log",
+      `${new Date().toISOString()},${message.from.id},${
+        message.from.language_code
+      },${imageFileURL}\n`
+    );
     const response = await fetch(
       `https://api.trace.moe/search?${[
+        `ip=${message.from.id}`,
         `url=${encodeURIComponent(imageFileURL)}`,
         "cutBorders=1",
         "info=basic",
@@ -227,7 +235,23 @@ const privateMessageHandler = async (message) => {
     reply_to_message_id: responding_msg.message_id,
   });
 
-  const result = await submitSearch(imageURL, messageIsJC(responding_msg));
+  const result = await submitSearch(imageURL, messageIsJC(responding_msg), message);
+  if (result.status === 402 || result.status === 429) {
+    await bot.sendMessage(
+      message.chat.id,
+      "You exceeded the search limit, please try again later",
+      {
+        reply_to_message_id: responding_msg.message_id,
+      }
+    );
+    return;
+  }
+  if (result.status === 503) {
+    await bot.sendMessage(message.chat.id, "Database overloaded, please try again later", {
+      reply_to_message_id: responding_msg.message_id,
+    });
+    return;
+  }
   // better to send responses one-by-one
   await bot
     .editMessageText(result.text, {
@@ -281,9 +305,25 @@ const groupMessageHandler = async (message) => {
     return;
   }
 
-  const result = await submitSearch(imageURL, messageIsJC(responding_msg)).catch((e) => {
+  const result = await submitSearch(imageURL, messageIsJC(responding_msg), message).catch((e) => {
     console.error(1273, e);
   });
+  if (result.status === 402 || result.status === 429) {
+    await bot.sendMessage(
+      message.chat.id,
+      "You exceeded the search limit, please try again later",
+      {
+        reply_to_message_id: responding_msg.message_id,
+      }
+    );
+    return;
+  }
+  if (result.status === 503) {
+    await bot.sendMessage(message.chat.id, "Database overloaded, please try again later", {
+      reply_to_message_id: responding_msg.message_id,
+    });
+    return;
+  }
   if (result.isAdult) {
     await bot
       .sendMessage(
