@@ -79,7 +79,7 @@ const submitSearch = (imageFileURL, useJC, message) =>
         `ip=${message.from.id}`,
         `url=${encodeURIComponent(imageFileURL)}`,
         "cutBorders=1",
-        "info=basic",
+        "info=id",
         useJC ? "&method=jc" : "",
       ].join("&")}`,
       {
