@@ -1,11 +1,17 @@
 import "dotenv/config.js";
 import { promisify } from "util";
-import fs from "fs";
 import fetch from "node-fetch";
 import TelegramBot from "node-telegram-bot-api";
 import * as redis from "redis";
 
-const { SERVER_PORT, REDIS_HOST, TELEGRAM_TOKEN, TELEGRAM_WEBHOOK, TRACE_MOE_KEY } = process.env;
+const {
+  SERVER_PORT,
+  TELEGRAM_TOKEN,
+  TELEGRAM_WEBHOOK,
+  TRACE_MOE_KEY,
+  REDIS_HOST,
+  ANILIST_API_URL,
+} = process.env;
 
 let redisClient = null;
 let getAsync = null;
@@ -37,14 +43,37 @@ const formatTime = (timeInSeconds) => {
   return `${hours}:${minutes}:${seconds}`;
 };
 
+const getAnilistInfo = (id) =>
+  new Promise(async (resolve) => {
+    const response = await fetch(ANILIST_API_URL, {
+      method: "POST",
+      body: JSON.stringify({
+        query: `query($id: Int) {
+          Media(id: $id, type: ANIME) {
+            id
+            idMal
+            title {
+              native
+              romaji
+              english
+            }
+            synonyms
+            isAdult
+          }
+        }
+        `,
+        variables: { id },
+      }),
+      headers: { "Content-Type": "application/json" },
+    });
+    if (response.status >= 400) {
+      return resolve({ text: "`Anilist API error, please try again later.`" });
+    }
+    return resolve((await response.json()).data.Media);
+  });
+
 const submitSearch = (imageFileURL, useJC, message) =>
   new Promise(async (resolve, reject) => {
-    fs.appendFileSync(
-      "log.log",
-      `${new Date().toISOString()},${message.from.id},${
-        message.from.language_code
-      },${imageFileURL}\n`
-    );
     const response = await fetch(
       `https://api.trace.moe/search?${[
         `ip=${message.from.id}`,
@@ -79,18 +108,11 @@ const submitSearch = (imageFileURL, useJC, message) =>
     if (searchResult?.result?.length <= 0) {
       return resolve({ text: "Cannot find any results from trace.moe" });
     }
+    const { anilist, similarity, filename, from, to, video } = searchResult.result[0];
     const {
-      anilist: {
-        id,
-        isAdult,
-        title: { chinese, english, native, romaji },
-      },
-      similarity,
-      filename,
-      from,
-      to,
-      video,
-    } = searchResult.result[0];
+      title: { chinese, english, native, romaji },
+      isAdult,
+    } = await getAnilistInfo(anilist.id);
     let text = "";
     text += [native, chinese, romaji, english]
       .filter((e) => e)
