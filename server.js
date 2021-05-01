@@ -79,7 +79,6 @@ const submitSearch = (imageFileURL, useJC, message) =>
         `ip=${message.from.id}`,
         `url=${encodeURIComponent(imageFileURL)}`,
         "cutBorders=1",
-        "info=id",
         useJC ? "&method=jc" : "",
       ].join("&")}`,
       {
@@ -112,7 +111,7 @@ const submitSearch = (imageFileURL, useJC, message) =>
     const {
       title: { chinese, english, native, romaji },
       isAdult,
-    } = await getAnilistInfo(anilist.id);
+    } = await getAnilistInfo(anilist);
     let text = "";
     text += [native, chinese, romaji, english]
       .filter((e) => e)
