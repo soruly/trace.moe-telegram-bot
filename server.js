@@ -1,4 +1,4 @@
-import "dotenv/config.js";
+import "dotenv/config";
 import { promisify } from "util";
 import fetch from "node-fetch";
 import TelegramBot from "node-telegram-bot-api";
@@ -76,7 +76,7 @@ const submitSearch = (imageFileURL, useJC, message) =>
   new Promise(async (resolve, reject) => {
     const response = await fetch(
       `https://api.trace.moe/search?${[
-        `ip=${message.from.id}`,
+        `uid=tg${message.from.id}`,
         `url=${encodeURIComponent(imageFileURL)}`,
         "cutBorders=1",
         useJC ? "&method=jc" : "",
