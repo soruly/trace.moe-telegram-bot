@@ -93,6 +93,9 @@ const submitSearch = (imageFileURL, useJC, message) =>
     if ([502, 503, 504].includes(response.status)) {
       return resolve({ text: "`trace.moe server is busy, please try again later.`" });
     }
+    if (response.status === 402 || response.status === 429) {
+      return resolve({ text: "`You exceeded the search limit, please try again later`" });
+    }
     if (response.status >= 400) {
       return resolve({ text: "`trace.moe API error, please try again later.`" });
     }
@@ -257,22 +260,6 @@ const privateMessageHandler = async (message) => {
   });
 
   const result = await submitSearch(imageURL, messageIsJC(responding_msg), message);
-  if (result.status === 402 || result.status === 429) {
-    await bot.sendMessage(
-      message.chat.id,
-      "You exceeded the search limit, please try again later",
-      {
-        reply_to_message_id: responding_msg.message_id,
-      }
-    );
-    return;
-  }
-  if (result.status === 503) {
-    await bot.sendMessage(message.chat.id, "Database overloaded, please try again later", {
-      reply_to_message_id: responding_msg.message_id,
-    });
-    return;
-  }
   // better to send responses one-by-one
   await bot
     .editMessageText(result.text, {
@@ -329,22 +316,6 @@ const groupMessageHandler = async (message) => {
   const result = await submitSearch(imageURL, messageIsJC(responding_msg), message).catch((e) => {
     console.error(1273, e);
   });
-  if (result.status === 402 || result.status === 429) {
-    await bot.sendMessage(
-      message.chat.id,
-      "You exceeded the search limit, please try again later",
-      {
-        reply_to_message_id: responding_msg.message_id,
-      }
-    );
-    return;
-  }
-  if (result.status === 503) {
-    await bot.sendMessage(message.chat.id, "Database overloaded, please try again later", {
-      reply_to_message_id: responding_msg.message_id,
-    });
-    return;
-  }
   if (result.isAdult) {
     await bot
       .sendMessage(
