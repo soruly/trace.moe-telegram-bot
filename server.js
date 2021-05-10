@@ -67,6 +67,7 @@ const getAnilistInfo = (id) =>
       headers: { "Content-Type": "application/json" },
     });
     if (response.status >= 400) {
+      console.error(1070, response.status, await response.text());
       return resolve({ text: "`Anilist API error, please try again later.`" });
     }
     return resolve((await response.json()).data.Media);
@@ -112,7 +113,7 @@ const submitSearch = (imageFileURL, useJC, message) =>
     }
     const { anilist, similarity, filename, from, to, video } = searchResult.result[0];
     const {
-      title: { chinese, english, native, romaji },
+      title: { chinese, english, native, romaji } = {},
       isAdult,
     } = await getAnilistInfo(anilist);
     let text = "";
