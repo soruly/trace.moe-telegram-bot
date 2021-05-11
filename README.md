@@ -66,12 +66,12 @@ npm install
 - Edit `.env` as follows
 
 ```
-SERVER_PORT=        # e.g. 3000
-REDIS_HOST=         # Usually 127.0.0.1
-TELEGRAM_TOKEN=     # e.g. 12345678:AAAAAAAAaA1AA1aa1Aaa1a_aAAaa-1aaAaa
-TELEGRAM_WEBHOOK=   # e.g. https://your.host.name/12345678:AAAAAAAAaA1AA1aa1Aaa1a_aAAaa-1aaAaa
-TRACE_MOE_KEY=      # Usually leave this empty
-ANILIST_API_URL=    https://graphql.anilist.co/ #Anilist Api URL
+SERVER_PORT=          # e.g. 3000
+TELEGRAM_TOKEN=       # e.g. 111111111:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+TELEGRAM_WEBHOOK=     # e.g. https://your.host.com/111111111:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+TRACE_MOE_KEY=        # (optional)
+REDIS_HOST=           # (optional) e.g. 127.0.0.1 or just leave blank to disable rate limit
+ANILIST_API_URL=https://graphql.anilist.co/
 ```
 
 ### Start server
