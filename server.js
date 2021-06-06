@@ -1,7 +1,10 @@
 import "dotenv/config";
+import { performance } from "perf_hooks";
 import { promisify } from "util";
 import fetch from "node-fetch";
-import TelegramBot from "node-telegram-bot-api";
+import express from "express";
+import rateLimit from "express-rate-limit";
+import bodyParser from "body-parser";
 import * as redis from "redis";
 
 const {
@@ -24,12 +27,70 @@ if (REDIS_HOST) {
   ttlAsync = promisify(redisClient.ttl).bind(redisClient);
 }
 
-let bot_name = null;
+const app = express();
+app.disable("x-powered-by");
+app.set("trust proxy", 1);
+app.use(
+  new rateLimit({
+    max: 3600, // limit each IP to 60 requests per 60 seconds
+    delayMs: 0, // disable delaying - full speed until the max limit is reached
+  })
+);
+app.use(bodyParser.json());
 
-const bot = new TelegramBot(TELEGRAM_TOKEN, {
-  webHook: { port: SERVER_PORT },
-  polling: false,
+app.use((req, res, next) => {
+  const startTime = performance.now();
+  console.log("=>", new Date().toISOString(), req.ip, req.path);
+  res.on("finish", () => {
+    console.log(
+      "<=",
+      new Date().toISOString(),
+      req.ip,
+      req.path,
+      res.statusCode,
+      `${(performance.now() - startTime).toFixed(0)}ms`
+    );
+  });
+  next();
 });
+
+const bot = {
+  sendMessage: (chat_id, text, options) =>
+    fetch(`https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ chat_id, text, ...options }),
+    })
+      .then((e) => e.json())
+      .then((e) => e.result),
+
+  sendChatAction: (chat_id, action) =>
+    fetch(`https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendChatAction`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ chat_id, action }),
+    })
+      .then((e) => e.json())
+      .then((e) => e.result),
+
+  sendVideo: (chat_id, video, options) =>
+    fetch(`https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendVideo`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ chat_id, video, ...options }),
+    })
+      .then((e) => e.json())
+      .then((e) => e.result),
+
+  editMessageText: (text, options) =>
+    fetch(`https://api.telegram.org/bot${TELEGRAM_TOKEN}/editMessageText`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text, ...options }),
+    })
+      .then((e) => e.json())
+      .then((e) => e.result),
+};
 
 const formatTime = (timeInSeconds) => {
   const sec_num = Number(timeInSeconds);
@@ -143,12 +204,13 @@ const messageIsMentioningBot = (message) => {
       message.entities
         .filter((entity) => entity.type === "mention")
         .map((entity) => message.text.substr(entity.offset, entity.length))
-        .filter((entity) => entity.toLowerCase() === `@${bot_name.toLowerCase()}`).length >= 1
+        .filter((entity) => entity.toLowerCase() === `@${app.locals.botName.toLowerCase()}`)
+        .length >= 1
     );
   }
   if (message.caption) {
     // Telegram does not provide entities when mentioning the bot in photo caption
-    return message.caption.toLowerCase().indexOf(`@${bot_name.toLowerCase()}`) >= 0;
+    return message.caption.toLowerCase().indexOf(`@${app.locals.botName.toLowerCase()}`) >= 0;
   }
   return false;
 };
@@ -358,18 +420,33 @@ const groupMessageHandler = async (message) => {
   }
 };
 
-const messageHandler = (message) => {
-  if (message.chat.type === "private") {
+app.post("/", (req, res) => {
+  const message = req.body?.message;
+  if (message?.chat?.type === "private") {
     privateMessageHandler(message);
-  } else if (message.chat.type === "group" || message.chat.type === "supergroup") {
+  } else if (message?.chat?.type === "group" || message?.chat?.type === "supergroup") {
     groupMessageHandler(message);
   }
-};
+  res.sendStatus(204);
+});
 
-bot.setWebHook(TELEGRAM_WEBHOOK);
+app.get("/:a", (req, res) => {
+  res.send("ok");
+});
 
-bot.on("message", messageHandler);
+app.listen(SERVER_PORT, "0.0.0.0", () => console.log(`server listening on port ${SERVER_PORT}`));
 
-const result = await bot.getMe();
-bot_name = result.username;
-console.log(JSON.stringify(result, null, 2));
+fetch(
+  `https://api.telegram.org/bot${TELEGRAM_TOKEN}/setWebhook?url=${TELEGRAM_WEBHOOK}&max_connections=100`
+)
+  .then((e) => e.json())
+  .then((e) => {
+    console.log(e);
+  });
+
+fetch(`https://api.telegram.org/bot${TELEGRAM_TOKEN}/getMe`)
+  .then((e) => e.json())
+  .then((e) => {
+    console.log(e);
+    app.locals.botName = e.result?.username;
+  });
