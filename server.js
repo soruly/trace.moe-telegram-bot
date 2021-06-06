@@ -134,14 +134,13 @@ const getAnilistInfo = (id) =>
     return resolve((await response.json()).data.Media);
   });
 
-const submitSearch = (imageFileURL, useJC, message) =>
+const submitSearch = (imageFileURL, message) =>
   new Promise(async (resolve, reject) => {
     const response = await fetch(
       `https://api.trace.moe/search?${[
         `uid=tg${message.from.id}`,
         `url=${encodeURIComponent(imageFileURL)}`,
         "cutBorders=1",
-        useJC ? "&method=jc" : "",
       ].join("&")}`,
       {
         headers: { "x-trace-key": TRACE_MOE_KEY },
@@ -220,13 +219,6 @@ const messageIsMute = (message) => {
     return message.caption.toLowerCase().indexOf("mute") >= 0;
   }
   return message.text?.toLowerCase().indexOf("mute") >= 0;
-};
-
-const messageIsJC = (message) => {
-  if (message.caption) {
-    return message.caption.toLowerCase().indexOf("jc") >= 0;
-  }
-  return message.text?.toLowerCase().indexOf("jc") >= 0;
 };
 
 // https://core.telegram.org/bots/api#photosize
@@ -313,7 +305,7 @@ const privateMessageHandler = async (message) => {
     reply_to_message_id: responding_msg.message_id,
   });
 
-  const result = await submitSearch(imageURL, messageIsJC(responding_msg), message);
+  const result = await submitSearch(imageURL, responding_msg, message);
   // better to send responses one-by-one
   await editMessageText(result.text, {
     chat_id: bot_message.chat.id,
@@ -354,7 +346,7 @@ const groupMessageHandler = async (message) => {
     return;
   }
 
-  const result = await submitSearch(imageURL, messageIsJC(responding_msg), message);
+  const result = await submitSearch(imageURL, responding_msg, message);
   if (result.isAdult) {
     await sendMessage(
       message.chat.id,
