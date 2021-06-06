@@ -16,6 +16,8 @@ const {
   ANILIST_API_URL,
 } = process.env;
 
+const TELEGRAM_API = "https://api.telegram.org";
+
 let redisClient = null;
 let getAsync = null;
 let setAsync = null;
@@ -54,43 +56,41 @@ app.use((req, res, next) => {
   next();
 });
 
-const bot = {
-  sendMessage: (chat_id, text, options) =>
-    fetch(`https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ chat_id, text, ...options }),
-    })
-      .then((e) => e.json())
-      .then((e) => e.result),
+const sendMessage = (chat_id, text, options) =>
+  fetch(`${TELEGRAM_API}/bot${TELEGRAM_TOKEN}/sendMessage`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ chat_id, text, ...options }),
+  })
+    .then((e) => e.json())
+    .then((e) => e.result);
 
-  sendChatAction: (chat_id, action) =>
-    fetch(`https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendChatAction`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ chat_id, action }),
-    })
-      .then((e) => e.json())
-      .then((e) => e.result),
+const sendChatAction = (chat_id, action) =>
+  fetch(`${TELEGRAM_API}/bot${TELEGRAM_TOKEN}/sendChatAction`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ chat_id, action }),
+  })
+    .then((e) => e.json())
+    .then((e) => e.result);
 
-  sendVideo: (chat_id, video, options) =>
-    fetch(`https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendVideo`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ chat_id, video, ...options }),
-    })
-      .then((e) => e.json())
-      .then((e) => e.result),
+const sendVideo = (chat_id, video, options) =>
+  fetch(`${TELEGRAM_API}/bot${TELEGRAM_TOKEN}/sendVideo`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ chat_id, video, ...options }),
+  })
+    .then((e) => e.json())
+    .then((e) => e.result);
 
-  editMessageText: (text, options) =>
-    fetch(`https://api.telegram.org/bot${TELEGRAM_TOKEN}/editMessageText`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ text, ...options }),
-    })
-      .then((e) => e.json())
-      .then((e) => e.result),
-};
+const editMessageText = (text, options) =>
+  fetch(`${TELEGRAM_API}/bot${TELEGRAM_TOKEN}/editMessageText`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ text, ...options }),
+  })
+    .then((e) => e.json())
+    .then((e) => e.result);
 
 const formatTime = (timeInSeconds) => {
   const sec_num = Number(timeInSeconds);
@@ -233,14 +233,10 @@ const messageIsJC = (message) => {
 const getImageUrlFromPhotoSize = async (PhotoSize) => {
   if (PhotoSize?.file_id) {
     const json = await fetch(
-      `https://api.telegram.org/bot${TELEGRAM_TOKEN}/getFile?file_id=${PhotoSize.file_id}`
-    )
-      .then((res) => res.json())
-      .catch((e) => {
-        console.error(1142, e);
-      });
+      `${TELEGRAM_API}/bot${TELEGRAM_TOKEN}/getFile?file_id=${PhotoSize.file_id}`
+    ).then((res) => res.json());
     return json?.result?.file_path
-      ? `https://api.telegram.org/file/bot${TELEGRAM_TOKEN}/${json.result.file_path}`
+      ? `${TELEGRAM_API}/file/bot${TELEGRAM_TOKEN}/${json.result.file_path}`
       : false;
   }
   return false;
@@ -303,47 +299,34 @@ const privateMessageHandler = async (message) => {
   const responding_msg = message.reply_to_message ? message.reply_to_message : message;
   const imageURL = await getImageFromMessage(responding_msg);
   if (!imageURL) {
-    await bot.sendMessage(message.chat.id, "You can Send / Forward anime screenshots to me.");
+    await sendMessage(message.chat.id, "You can Send / Forward anime screenshots to me.");
     return;
   }
   if (await limitExceeded(message)) {
-    await bot.sendMessage(
-      message.chat.id,
-      "You exceeded the search limit, please try again later",
-      {
-        reply_to_message_id: responding_msg.message_id,
-      }
-    );
+    await sendMessage(message.chat.id, "You exceeded the search limit, please try again later", {
+      reply_to_message_id: responding_msg.message_id,
+    });
     return;
   }
 
-  const bot_message = await bot.sendMessage(message.chat.id, "Searching...", {
+  const bot_message = await sendMessage(message.chat.id, "Searching...", {
     reply_to_message_id: responding_msg.message_id,
   });
 
   const result = await submitSearch(imageURL, messageIsJC(responding_msg), message);
   // better to send responses one-by-one
-  await bot
-    .editMessageText(result.text, {
-      chat_id: bot_message.chat.id,
-      message_id: bot_message.message_id,
-      parse_mode: "Markdown",
-    })
-    .catch((e) => {
-      console.error(1227, e);
-    });
+  await editMessageText(result.text, {
+    chat_id: bot_message.chat.id,
+    message_id: bot_message.message_id,
+    parse_mode: "Markdown",
+  });
+
   if (result.video) {
     const videoLink = messageIsMute(message) ? `${result.video}&mute` : result.video;
-    const video = await fetch(videoLink, { method: "HEAD" }).catch((e) => {
-      console.error(1232, e);
-    });
+    const video = await fetch(videoLink, { method: "HEAD" });
     if (video.ok && video.headers.get("content-length") > 0) {
-      await bot.sendChatAction(message.chat.id, "upload_video").catch((e) => {
-        console.error(1236, e);
-      });
-      await bot.sendVideo(message.chat.id, videoLink).catch((e) => {
-        console.error(1239, e);
-      });
+      await sendChatAction(message.chat.id, "upload_video");
+      await sendVideo(message.chat.id, videoLink);
     }
   }
 };
@@ -356,7 +339,7 @@ const groupMessageHandler = async (message) => {
   const imageURL = await getImageFromMessage(responding_msg);
   if (!imageURL) {
     // cannot find image from the message mentioning the bot
-    await bot.sendMessage(
+    await sendMessage(
       message.chat.id,
       "Mention me in an anime screenshot, I will tell you what anime is that",
       { reply_to_message_id: message.message_id }
@@ -365,57 +348,37 @@ const groupMessageHandler = async (message) => {
   }
 
   if (await limitExceeded(message)) {
-    await bot.sendMessage(
+    await sendMessage(message.chat.id, "You exceeded the search limit, please try again later", {
+      reply_to_message_id: responding_msg.message_id,
+    });
+    return;
+  }
+
+  const result = await submitSearch(imageURL, messageIsJC(responding_msg), message);
+  if (result.isAdult) {
+    await sendMessage(
       message.chat.id,
-      "You exceeded the search limit, please try again later",
+      "I've found an adult result 😳\nPlease forward it to me via Private Chat 😏",
       {
         reply_to_message_id: responding_msg.message_id,
       }
     );
-    return;
-  }
 
-  const result = await submitSearch(imageURL, messageIsJC(responding_msg), message).catch((e) => {
-    console.error(1273, e);
-  });
-  if (result.isAdult) {
-    await bot
-      .sendMessage(
-        message.chat.id,
-        "I've found an adult result 😳\nPlease forward it to me via Private Chat 😏",
-        {
-          reply_to_message_id: responding_msg.message_id,
-        }
-      )
-      .catch((e) => {
-        console.error(1285, e);
-      });
     return;
   }
-  await bot
-    .sendMessage(message.chat.id, result.text, {
-      reply_to_message_id: responding_msg.message_id,
-      parse_mode: "Markdown",
-    })
-    .catch((e) => {
-      console.error(1295, e);
-    });
+  await sendMessage(message.chat.id, result.text, {
+    reply_to_message_id: responding_msg.message_id,
+    parse_mode: "Markdown",
+  });
+
   if (result.video) {
     const videoLink = messageIsMute(message) ? `${result.video}&mute` : result.video;
-    const video = await fetch(videoLink, { method: "HEAD" }).catch((e) => {
-      console.error(1300, e);
-    });
+    const video = await fetch(videoLink, { method: "HEAD" });
     if (video.ok && video.headers.get("content-length") > 0) {
-      await bot.sendChatAction(message.chat.id, "upload_video").catch((e) => {
-        console.error(1304, e);
+      await sendChatAction(message.chat.id, "upload_video");
+      await sendVideo(message.chat.id, videoLink, {
+        reply_to_message_id: responding_msg.message_id,
       });
-      await bot
-        .sendVideo(message.chat.id, videoLink, {
-          reply_to_message_id: responding_msg.message_id,
-        })
-        .catch((e) => {
-          console.error(1311, e);
-        });
     }
   }
 };
@@ -436,15 +399,13 @@ app.get("/:a", (req, res) => {
 
 app.listen(SERVER_PORT, "0.0.0.0", () => console.log(`server listening on port ${SERVER_PORT}`));
 
-fetch(
-  `https://api.telegram.org/bot${TELEGRAM_TOKEN}/setWebhook?url=${TELEGRAM_WEBHOOK}&max_connections=100`
-)
+fetch(`${TELEGRAM_API}/bot${TELEGRAM_TOKEN}/setWebhook?url=${TELEGRAM_WEBHOOK}&max_connections=100`)
   .then((e) => e.json())
   .then((e) => {
     console.log(e);
   });
 
-fetch(`https://api.telegram.org/bot${TELEGRAM_TOKEN}/getMe`)
+fetch(`${TELEGRAM_API}/bot${TELEGRAM_TOKEN}/getMe`)
   .then((e) => e.json())
   .then((e) => {
     console.log(e);
