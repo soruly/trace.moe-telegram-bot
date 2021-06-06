@@ -40,21 +40,21 @@ app.use(
 );
 app.use(bodyParser.json());
 
-app.use((req, res, next) => {
-  const startTime = performance.now();
-  console.log("=>", new Date().toISOString(), req.ip, req.path);
-  res.on("finish", () => {
-    console.log(
-      "<=",
-      new Date().toISOString(),
-      req.ip,
-      req.path,
-      res.statusCode,
-      `${(performance.now() - startTime).toFixed(0)}ms`
-    );
-  });
-  next();
-});
+// app.use((req, res, next) => {
+//   const startTime = performance.now();
+//   console.log("=>", new Date().toISOString(), req.ip, req.path);
+//   res.on("finish", () => {
+//     console.log(
+//       "<=",
+//       new Date().toISOString(),
+//       req.ip,
+//       req.path,
+//       res.statusCode,
+//       `${(performance.now() - startTime).toFixed(0)}ms`
+//     );
+//   });
+//   next();
+// });
 
 const sendMessage = (chat_id, text, options) =>
   fetch(`${TELEGRAM_API}/bot${TELEGRAM_TOKEN}/sendMessage`, {
@@ -385,7 +385,7 @@ app.post("/", (req, res) => {
   res.sendStatus(204);
 });
 
-app.get("/:a", (req, res) => {
+app.get("/", (req, res) => {
   res.send("ok");
 });
 
