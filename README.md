@@ -43,25 +43,22 @@ Please read [Telegram's official tutorial to create a Bot](https://core.telegram
 
 You need to disable [Privacy Mode](https://core.telegram.org/bots#privacy-mode) if you want to use your bot in group chat.
 
-### Prerequisites
+### Host with docker
 
-- Node.js 14.x
-- Redis (optional)
-
-### Install
-
-Install Prerequisites first, then:
+Docker Image available on [Docker Hub](https://hub.docker.com/repository/docker/soruly/trace.moe-telegram-bot) or [GitHub Container Registry](https://github.com/soruly/trace.moe-telegram-bot/pkgs/container/trace.moe-telegram-bot)
 
 ```
-git clone https://github.com/soruly/trace.moe-telegram-bot.git
-cd trace.moe-telegram-bot
-npm install
+docker run \
+  -e TELEGRAM_WEBHOOK=https://your.host.com/ \
+  -e TELEGRAM_TOKEN=111111111:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA \
+  -p 443:3000 \
+  ghcr.io/soruly/trace.moe-telegram-bot:latest
+
 ```
 
-### Configuration
+Note that you need to configure a reverse proxy if you need HTTPS.
 
-- Copy `.env.example` to `.env`
-- Edit `.env` as follows
+### Environment Variables
 
 ```
 TELEGRAM_TOKEN=       # e.g. 111111111:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
@@ -72,11 +69,24 @@ REDIS_HOST=           # (optional) e.g. 127.0.0.1 or just leave blank to disable
 ANILIST_API_URL=      # (optional) Default: https://graphql.anilist.co/
 ```
 
-### Start server
+### Use Node.js
+
+Install Node.js 14.x, then:
+
+```
+git clone https://github.com/soruly/trace.moe-telegram-bot.git
+cd trace.moe-telegram-bot
+npm install
+```
+
+- Copy `.env.example` to `.env`
+- Edit `.env` as you need
 
 ```
 node server.js
 ```
+
+### Use Node.js with pm2
 
 You also can use [pm2](https://pm2.keymetrics.io/) to run this in background in cluster mode.
 
