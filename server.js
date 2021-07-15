@@ -1,5 +1,4 @@
 import "dotenv/config";
-import { performance } from "perf_hooks";
 import { promisify } from "util";
 import fetch from "node-fetch";
 import express from "express";
@@ -8,15 +7,41 @@ import bodyParser from "body-parser";
 import * as redis from "redis";
 
 const {
-  SERVER_PORT,
+  SERVER_PORT = 3000,
   TELEGRAM_TOKEN,
   TELEGRAM_WEBHOOK,
   TRACE_MOE_KEY,
-  REDIS_HOST,
-  ANILIST_API_URL,
+  REDIS_HOST = "",
+  ANILIST_API_URL = "https://graphql.anilist.co/",
 } = process.env;
 
 const TELEGRAM_API = "https://api.telegram.org";
+
+if (!TELEGRAM_TOKEN || !TELEGRAM_WEBHOOK) {
+  console.log("Please configure TELEGRAM_TOKEN and TELEGRAM_WEBHOOK first");
+  process.exit();
+}
+
+console.log(`TELEGRAM_WEBHOOK: ${TELEGRAM_WEBHOOK}`);
+console.log(`Use trace.moe API: ${TRACE_MOE_KEY ? "with API Key" : "without API Key"}`);
+console.log(`Redis host for rate limit: ${REDIS_HOST || "disabled"}`);
+console.log(`Anilist Info Endpoint: ${ANILIST_API_URL}`);
+
+console.log("Setting Telegram webhook...");
+await fetch(
+  `${TELEGRAM_API}/bot${TELEGRAM_TOKEN}/setWebhook?url=${TELEGRAM_WEBHOOK}&max_connections=100`
+)
+  .then((e) => e.json())
+  .then((e) => {
+    console.log(e);
+  });
+
+fetch(`${TELEGRAM_API}/bot${TELEGRAM_TOKEN}/getMe`)
+  .then((e) => e.json())
+  .then((e) => {
+    console.log(e);
+    app.locals.botName = e.result?.username;
+  });
 
 let redisClient = null;
 let getAsync = null;
@@ -142,9 +167,11 @@ const submitSearch = (imageFileURL, message) =>
         `url=${encodeURIComponent(imageFileURL)}`,
         "cutBorders=1",
       ].join("&")}`,
-      {
-        headers: { "x-trace-key": TRACE_MOE_KEY },
-      }
+      TRACE_MOE_KEY
+        ? {
+            headers: { "x-trace-key": TRACE_MOE_KEY },
+          }
+        : {}
     ).catch((e) => {
       return resolve({ text: "`trace.moe API error, please try again later.`" });
     });
@@ -390,16 +417,3 @@ app.get("/", (req, res) => {
 });
 
 app.listen(SERVER_PORT, "0.0.0.0", () => console.log(`server listening on port ${SERVER_PORT}`));
-
-fetch(`${TELEGRAM_API}/bot${TELEGRAM_TOKEN}/setWebhook?url=${TELEGRAM_WEBHOOK}&max_connections=100`)
-  .then((e) => e.json())
-  .then((e) => {
-    console.log(e);
-  });
-
-fetch(`${TELEGRAM_API}/bot${TELEGRAM_TOKEN}/getMe`)
-  .then((e) => e.json())
-  .then((e) => {
-    console.log(e);
-    app.locals.botName = e.result?.username;
-  });

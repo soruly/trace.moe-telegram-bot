@@ -46,9 +46,7 @@ You need to disable [Privacy Mode](https://core.telegram.org/bots#privacy-mode) 
 ### Prerequisites
 
 - Node.js 14.x
-- Redis
-- git
-- [pm2](https://pm2.keymetrics.io/) (optional)
+- Redis (optional)
 
 ### Install
 
@@ -66,12 +64,12 @@ npm install
 - Edit `.env` as follows
 
 ```
-SERVER_PORT=          # e.g. 3000
 TELEGRAM_TOKEN=       # e.g. 111111111:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
-TELEGRAM_WEBHOOK=     # e.g. https://your.host.com/111111111:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+TELEGRAM_WEBHOOK=     # e.g. https://your.host.com/
+SERVER_PORT=          # (optional) Default: 3000
 TRACE_MOE_KEY=        # (optional)
 REDIS_HOST=           # (optional) e.g. 127.0.0.1 or just leave blank to disable rate limit
-ANILIST_API_URL=https://graphql.anilist.co/
+ANILIST_API_URL=      # (optional) Default: https://graphql.anilist.co/
 ```
 
 ### Start server
@@ -80,7 +78,7 @@ ANILIST_API_URL=https://graphql.anilist.co/
 node server.js
 ```
 
-You also can use pm2 to run this in background in cluster mode.
+You also can use [pm2](https://pm2.keymetrics.io/) to run this in background in cluster mode.
 
 Use below commands to start / restart / stop server.
 

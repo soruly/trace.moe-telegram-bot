@@ -1,7 +1,7 @@
 {
   "name": "trace.moe-telegram-bot",
   "version": "2.1.2",
-  "description": "",
+  "description": "This Telegram Bot can tell the anime when you send an screenshot to it",
   "main": "server.js",
   "type": "module",
   "scripts": {
@@ -15,8 +15,16 @@
     "lint": "prettier --check \"**/*.js\"",
     "test": "prettier --check \"**/*.js\""
   },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/soruly/trace.moe-telegram-bot.git"
+  },
   "author": "soruly",
   "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/soruly/trace.moe-telegram-bot/issues"
+  },
+  "homepage": "https://github.com/soruly/trace.moe-telegram-bot#readme",
   "dependencies": {
     "body-parser": "^1.19.0",
     "dotenv": "^10.0.0",
