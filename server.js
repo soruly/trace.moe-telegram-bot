@@ -7,7 +7,7 @@ import bodyParser from "body-parser";
 import * as redis from "redis";
 
 const {
-  SERVER_PORT = 3000,
+  PORT = 3000,
   TELEGRAM_TOKEN,
   TELEGRAM_WEBHOOK,
   TRACE_MOE_KEY,
@@ -416,4 +416,4 @@ app.get("/", (req, res) => {
   res.send("ok");
 });
 
-app.listen(SERVER_PORT, "0.0.0.0", () => console.log(`server listening on port ${SERVER_PORT}`));
+app.listen(PORT, "0.0.0.0", () => console.log(`server listening on port ${PORT}`));
