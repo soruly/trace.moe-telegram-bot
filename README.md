@@ -65,7 +65,6 @@ TELEGRAM_TOKEN=       # e.g. 111111111:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
 TELEGRAM_WEBHOOK=     # e.g. https://your.host.com/
 PORT=                 # (optional) Default: 3000
 TRACE_MOE_KEY=        # (optional)
-REDIS_HOST=           # (optional) e.g. 127.0.0.1 or just leave blank to disable rate limit
 ANILIST_API_URL=      # (optional) Default: https://graphql.anilist.co/
 ```
 

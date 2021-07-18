@@ -1,17 +1,14 @@
 import "dotenv/config";
-import { promisify } from "util";
 import fetch from "node-fetch";
 import express from "express";
 import rateLimit from "express-rate-limit";
 import bodyParser from "body-parser";
-import * as redis from "redis";
 
 const {
   PORT = 3000,
   TELEGRAM_TOKEN,
   TELEGRAM_WEBHOOK,
   TRACE_MOE_KEY,
-  REDIS_HOST = "",
   ANILIST_API_URL = "https://graphql.anilist.co/",
 } = process.env;
 
@@ -24,7 +21,6 @@ if (!TELEGRAM_TOKEN || !TELEGRAM_WEBHOOK) {
 
 console.log(`TELEGRAM_WEBHOOK: ${TELEGRAM_WEBHOOK}`);
 console.log(`Use trace.moe API: ${TRACE_MOE_KEY ? "with API Key" : "without API Key"}`);
-console.log(`Redis host for rate limit: ${REDIS_HOST || "disabled"}`);
 console.log(`Anilist Info Endpoint: ${ANILIST_API_URL}`);
 
 console.log("Setting Telegram webhook...");
@@ -43,23 +39,12 @@ fetch(`${TELEGRAM_API}/bot${TELEGRAM_TOKEN}/getMe`)
     app.locals.botName = e.result?.username;
   });
 
-let redisClient = null;
-let getAsync = null;
-let setAsync = null;
-let ttlAsync = null;
-if (REDIS_HOST) {
-  redisClient = redis.createClient({ host: REDIS_HOST });
-  getAsync = promisify(redisClient.get).bind(redisClient);
-  setAsync = promisify(redisClient.set).bind(redisClient);
-  ttlAsync = promisify(redisClient.ttl).bind(redisClient);
-}
-
 const app = express();
 app.disable("x-powered-by");
 app.set("trust proxy", 1);
 app.use(
   new rateLimit({
-    max: 3600, // limit each IP to 60 requests per 60 seconds
+    max: 3600, // limit each IP to 3600 requests per 60 seconds
     delayMs: 0, // disable delaying - full speed until the max limit is reached
   })
 );
@@ -283,48 +268,11 @@ const getImageFromMessage = async (message) => {
   return false;
 };
 
-const limitExceeded = async (message) => {
-  if (REDIS_HOST) {
-    let limit = await getAsync(`telegram_${message.from.id}_limit`);
-    const limitTTL = await ttlAsync(`telegram_${message.from.id}_limit`);
-    limit = limit === null ? 5 - 1 : limit - 1;
-    await setAsync(
-      `telegram_${message.from.id}_limit`,
-      limit,
-      "EX",
-      Number(limitTTL) > 0 ? Number(limitTTL) : 60
-    );
-    if (limit < 0) {
-      return true;
-    }
-
-    let quota = await getAsync(`telegram_${message.from.id}_quota`);
-    const quotaTTL = await ttlAsync(`telegram_${message.from.id}_quota`);
-    quota = quota === null ? 50 - 1 : quota - 1;
-    await setAsync(
-      `telegram_${message.from.id}_quota`,
-      quota,
-      "EX",
-      Number(quotaTTL) > 0 ? Number(quotaTTL) : 86400
-    );
-    if (quota < 0) {
-      return true;
-    }
-  }
-  return false;
-};
-
 const privateMessageHandler = async (message) => {
   const responding_msg = message.reply_to_message ? message.reply_to_message : message;
   const imageURL = await getImageFromMessage(responding_msg);
   if (!imageURL) {
     await sendMessage(message.chat.id, "You can Send / Forward anime screenshots to me.");
-    return;
-  }
-  if (await limitExceeded(message)) {
-    await sendMessage(message.chat.id, "You exceeded the search limit, please try again later", {
-      reply_to_message_id: responding_msg.message_id,
-    });
     return;
   }
 
@@ -363,13 +311,6 @@ const groupMessageHandler = async (message) => {
       "Mention me in an anime screenshot, I will tell you what anime is that",
       { reply_to_message_id: message.message_id }
     );
-    return;
-  }
-
-  if (await limitExceeded(message)) {
-    await sendMessage(message.chat.id, "You exceeded the search limit, please try again later", {
-      reply_to_message_id: responding_msg.message_id,
-    });
     return;
   }
 
