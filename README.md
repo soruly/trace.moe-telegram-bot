@@ -48,7 +48,7 @@ You need to disable [Privacy Mode](https://core.telegram.org/bots#privacy-mode) 
 Docker Image available on [Docker Hub](https://hub.docker.com/repository/docker/soruly/trace.moe-telegram-bot) or [GitHub Container Registry](https://github.com/soruly/trace.moe-telegram-bot/pkgs/container/trace.moe-telegram-bot)
 
 ```
-docker run -it --rm --init --name trace-moe-tg-bot \
+docker run -it --rm --name trace-moe-tg-bot \
   -e TELEGRAM_WEBHOOK=https://your.host.com/ \
   -e TELEGRAM_TOKEN=111111111:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA \
   -p 443:3000 \
