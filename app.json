@@ -12,6 +12,10 @@
     "TELEGRAM_WEBHOOK": {
       "description": "Replace xxxxxx with your app name.",
       "value": "https://xxxxxx.herokuapp.com/"
+    },
+    "TRACE_MOE_KEY": {
+      "description": "Leave this blank unless you have a trace.moe API Key, see: https://soruly.github.io/trace.moe-api/",
+      "required": false
     }
   }
 }
