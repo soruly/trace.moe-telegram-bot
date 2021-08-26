@@ -14,7 +14,7 @@
       "value": "https://xxxxxx.herokuapp.com/"
     },
     "TRACE_MOE_KEY": {
-      "description": "Leave this blank unless you have a trace.moe API Key, see: https://soruly.github.io/trace.moe-api/",
+      "description": "Leave this blank or Enter your trace.moe API Key to unlock search quota and limits. see: https://soruly.github.io/trace.moe-api/#/limits",
       "required": false
     }
   }
