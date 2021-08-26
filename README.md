@@ -43,6 +43,20 @@ Please read [Telegram's official tutorial to create a Bot](https://core.telegram
 
 You need to disable [Privacy Mode](https://core.telegram.org/bots#privacy-mode) if you want to use your bot in group chat.
 
+### Environment Variables
+
+```
+TELEGRAM_TOKEN=       # e.g. 111111111:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+TELEGRAM_WEBHOOK=     # e.g. https://your.host.com/
+PORT=                 # (optional) Default: 3000
+TRACE_MOE_KEY=        # (optional)
+ANILIST_API_URL=      # (optional) Default: https://graphql.anilist.co/
+```
+
+### Host on Heroku
+
+[![Deploy](https://www.herokucdn.com/deploy/button.svg)](https://heroku.com/deploy?template=https://github.com/soruly/trace.moe-telegram-bot)
+
 ### Host with docker
 
 Docker Image available on [Docker Hub](https://hub.docker.com/repository/docker/soruly/trace.moe-telegram-bot) or [GitHub Container Registry](https://github.com/soruly/trace.moe-telegram-bot/pkgs/container/trace.moe-telegram-bot)
@@ -58,17 +72,7 @@ docker run -it --rm --name trace-moe-tg-bot \
 
 Note that you need to configure a reverse proxy if you need HTTPS.
 
-### Environment Variables
-
-```
-TELEGRAM_TOKEN=       # e.g. 111111111:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
-TELEGRAM_WEBHOOK=     # e.g. https://your.host.com/
-PORT=                 # (optional) Default: 3000
-TRACE_MOE_KEY=        # (optional)
-ANILIST_API_URL=      # (optional) Default: https://graphql.anilist.co/
-```
-
-### Use Node.js
+### Host bare-metal with Node.js
 
 Install Node.js 14.x, then:
 
@@ -85,7 +89,7 @@ npm install
 node server.js
 ```
 
-### Use Node.js with pm2
+### Host bare-metal with pm2
 
 You also can use [pm2](https://pm2.keymetrics.io/) to run this in background in cluster mode.
 
