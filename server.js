@@ -15,7 +15,7 @@ const {
 
 const TELEGRAM_API = "https://api.telegram.org";
 
-const WEBHOOK = TELEGRAM_WEBHOOK ?? RAILWAY_STATIC_URL ? `https://${RAILWAY_STATIC_URL}` : "";
+const WEBHOOK = RAILWAY_STATIC_URL ? `https://${RAILWAY_STATIC_URL}` : TELEGRAM_WEBHOOK;
 
 if (!TELEGRAM_TOKEN || !WEBHOOK) {
   console.log("Please configure TELEGRAM_TOKEN and TELEGRAM_WEBHOOK first");
