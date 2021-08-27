@@ -355,7 +355,7 @@ app.post("/", (req, res) => {
 
 app.get("/", (req, res) => {
   return res.send(
-    `<a href="https://t.me/${app.locals.botName}">https://t.me/${app.locals.botName}</a>`
+    `<meta http-equiv="Refresh" content="0; URL=https://t.me/${app.locals.botName ?? ""}">`
   );
 });
 
