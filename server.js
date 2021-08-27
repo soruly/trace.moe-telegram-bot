@@ -354,10 +354,9 @@ app.post("/", (req, res) => {
 });
 
 app.get("/", (req, res) => {
-  if (app.locals.botName) {
-    return res.redirect(`https://t.me/${app.locals.botName}`);
-  }
-  return res.send("ok");
+  return res.send(
+    `<a href="https://t.me/${app.locals.botName}">https://t.me/${app.locals.botName}</a>`
+  );
 });
 
 app.listen(PORT, "0.0.0.0", () => console.log(`server listening on port ${PORT}`));
