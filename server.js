@@ -10,23 +10,24 @@ const {
   TELEGRAM_WEBHOOK,
   TRACE_MOE_KEY,
   ANILIST_API_URL = "https://graphql.anilist.co/",
+  RAILWAY_STATIC_URL,
 } = process.env;
 
 const TELEGRAM_API = "https://api.telegram.org";
 
-if (!TELEGRAM_TOKEN || !TELEGRAM_WEBHOOK) {
+const WEBHOOK = TELEGRAM_WEBHOOK ?? RAILWAY_STATIC_URL ? `https://${RAILWAY_STATIC_URL}` : "";
+
+if (!TELEGRAM_TOKEN || !WEBHOOK) {
   console.log("Please configure TELEGRAM_TOKEN and TELEGRAM_WEBHOOK first");
   process.exit();
 }
 
-console.log(`TELEGRAM_WEBHOOK: ${TELEGRAM_WEBHOOK}`);
+console.log(`WEBHOOK: ${WEBHOOK}`);
 console.log(`Use trace.moe API: ${TRACE_MOE_KEY ? "with API Key" : "without API Key"}`);
 console.log(`Anilist Info Endpoint: ${ANILIST_API_URL}`);
 
 console.log("Setting Telegram webhook...");
-await fetch(
-  `${TELEGRAM_API}/bot${TELEGRAM_TOKEN}/setWebhook?url=${TELEGRAM_WEBHOOK}&max_connections=100`
-)
+await fetch(`${TELEGRAM_API}/bot${TELEGRAM_TOKEN}/setWebhook?url=${WEBHOOK}&max_connections=100`)
   .then((e) => e.json())
   .then((e) => {
     console.log(e);
