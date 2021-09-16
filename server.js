@@ -2,7 +2,6 @@ import "dotenv/config";
 import fetch from "node-fetch";
 import express from "express";
 import rateLimit from "express-rate-limit";
-import bodyParser from "body-parser";
 
 const {
   PORT = 3000,
@@ -50,7 +49,7 @@ app.use(
     delayMs: 0, // disable delaying - full speed until the max limit is reached
   })
 );
-app.use(bodyParser.json());
+app.use(express.json());
 
 // app.use((req, res, next) => {
 //   const startTime = performance.now();
