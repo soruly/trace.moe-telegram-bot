@@ -43,7 +43,7 @@ const app = express();
 app.disable("x-powered-by");
 app.set("trust proxy", 1);
 app.use(
-  new rateLimit({
+  rateLimit({
     max: 100, // limit each IP to 100 requests
     windowMs: 1000, // per second
     delayMs: 0, // disable delaying - full speed until the max limit is reached
