@@ -29,7 +29,7 @@
     "dotenv": "^16.0.0",
     "express": "^4.18.0",
     "express-rate-limit": "^6.4.0",
-    "node-fetch": "^3.2.3"
+    "node-fetch": "^3.2.4"
   },
   "devDependencies": {
     "prettier": "^2.6.2"
