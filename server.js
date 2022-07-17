@@ -1,4 +1,5 @@
 import "dotenv/config";
+import fs from "fs";
 import fetch from "node-fetch";
 import child_process from "child_process";
 import express from "express";
@@ -13,14 +14,6 @@ const {
   RAILWAY_STATIC_URL,
   RAILWAY_GIT_COMMIT_SHA,
 } = process.env;
-
-let REVISION;
-try {
-  REVISION =
-    RAILWAY_GIT_COMMIT_SHA ?? child_process.execSync("git rev-parse HEAD").toString().trim();
-} catch (e) {
-  REVISION = "";
-}
 
 const TELEGRAM_API = "https://api.telegram.org";
 
@@ -50,6 +43,26 @@ fetch(`${TELEGRAM_API}/bot${TELEGRAM_TOKEN}/getMe`)
   });
 
 const app = express();
+
+let REVISION;
+try {
+  REVISION =
+    RAILWAY_GIT_COMMIT_SHA ?? child_process.execSync("git rev-parse HEAD").toString().trim();
+} catch (e) {
+  REVISION = "";
+}
+const packageJSON = fs.existsSync("./package.json")
+  ? JSON.parse(fs.readFileSync("./package.json"))
+  : null;
+const HELP_MESSAGE = [
+  `Bot Name: ${app.locals.botName ?? "(unknown)"}`,
+  `Use trace.moe with API Key? ${TRACE_MOE_KEY ? "true" : "false"}`,
+  `Anilist Info Endpoint: ${ANILIST_API_URL}`,
+  `Homepage: ${packageJSON?.homepage ?? ""}`,
+  `Revision: ${REVISION.substring(0, 7)}`,
+  packageJSON?.homepage && REVISION ? `${packageJSON?.homepage}/commit/${REVISION}` : "",
+].join("\n");
+
 app.disable("x-powered-by");
 app.set("trust proxy", 1);
 app.use(
@@ -293,7 +306,7 @@ const privateMessageHandler = async (message) => {
   const imageURL = await getImageFromMessage(responding_msg);
   if (!imageURL) {
     if (message.text?.toLowerCase() === "/help") {
-      return await sendMessage(message.chat.id, `Bot version: ${REVISION.substring(0, 7)}`);
+      return await sendMessage(message.chat.id, HELP_MESSAGE);
     }
     return await sendMessage(message.chat.id, "You can Send / Forward anime screenshots to me.");
   }
@@ -328,7 +341,7 @@ const groupMessageHandler = async (message) => {
   const imageURL = await getImageFromMessage(responding_msg);
   if (!imageURL) {
     if (message.text?.toLowerCase() === "/help") {
-      await sendMessage(message.chat.id, `Bot version: ${REVISION.substring(0, 7)}`, {
+      await sendMessage(message.chat.id, HELP_MESSAGE, {
         reply_to_message_id: message.message_id,
       });
     }
