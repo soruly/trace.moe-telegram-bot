@@ -309,7 +309,7 @@ const privateMessageHandler = async (message) => {
   const responding_msg = message.reply_to_message ? message.reply_to_message : message;
   const imageURL = await getImageFromMessage(responding_msg);
   if (!imageURL) {
-    if (message.text?.toLowerCase() === "/help") {
+    if (message.text?.toLowerCase().includes("/help")) {
       return await sendMessage(message.chat.id, getHelpMessage(app.locals.botName), {
         parse_mode: "Markdown",
       });
@@ -346,7 +346,7 @@ const groupMessageHandler = async (message) => {
   const responding_msg = message.reply_to_message ? message.reply_to_message : message;
   const imageURL = await getImageFromMessage(responding_msg);
   if (!imageURL) {
-    if (responding_msg.text?.toLowerCase() === "/help") {
+    if (responding_msg.text?.toLowerCase().includes("/help")) {
       await sendMessage(message.chat.id, getHelpMessage(app.locals.botName), {
         reply_to_message_id: message.message_id,
         parse_mode: "Markdown",
