@@ -147,23 +147,32 @@ const getAnilistInfo = (id) =>
 
 const submitSearch = (imageFileURL, message) =>
   new Promise(async (resolve, reject) => {
-    const response = await fetch(
-      `https://api.trace.moe/search?${[
-        `uid=tg${message.from.id}`,
-        `url=${encodeURIComponent(imageFileURL)}`,
-        "cutBorders=1",
-      ].join("&")}`,
-      TRACE_MOE_KEY
-        ? {
-            headers: { "x-trace-key": TRACE_MOE_KEY },
-          }
-        : {}
-    ).catch((e) => {
-      return resolve({ text: "`trace.moe API error, please try again later.`" });
-    });
-    if (!response) {
-      return resolve({ text: "`trace.moe API error, please try again later.`" });
+    let trial = 5;
+    let response = null;
+    while (trial > 0 && (!response || response.status === 503 || response.status === 402)) {
+      trial--;
+      response = await fetch(
+        `https://api.trace.moe/search?${[
+          `uid=tg${message.from.id}`,
+          `url=${encodeURIComponent(imageFileURL)}`,
+          "cutBorders=1",
+        ].join("&")}`,
+        TRACE_MOE_KEY ? { headers: { "x-trace-key": TRACE_MOE_KEY } } : {}
+      ).catch((e) => {
+        trial = 0;
+        return resolve({ text: "`trace.moe API error, please try again later.`" });
+      });
+      if (!response) {
+        trial = 0;
+        return resolve({ text: "`trace.moe API error, please try again later.`" });
+      }
+      if (response.status === 503 || response.status === 402) {
+        await new Promise((resolve) =>
+          setTimeout(resolve, Math.floor(Math.random() * 4000) + 1000)
+        );
+      } else trial = 0;
     }
+
     if ([502, 503, 504].includes(response.status)) {
       return resolve({ text: "`trace.moe server is busy, please try again later.`" });
     }
