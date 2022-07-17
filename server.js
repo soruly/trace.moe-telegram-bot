@@ -1,5 +1,6 @@
 import "dotenv/config";
 import fetch from "node-fetch";
+import child_process from "child_process";
 import express from "express";
 import rateLimit from "express-rate-limit";
 
@@ -10,7 +11,16 @@ const {
   TRACE_MOE_KEY,
   ANILIST_API_URL = "https://graphql.anilist.co/",
   RAILWAY_STATIC_URL,
+  RAILWAY_GIT_COMMIT_SHA,
 } = process.env;
+
+let REVISION;
+try {
+  REVISION =
+    RAILWAY_GIT_COMMIT_SHA ?? child_process.execSync("git rev-parse HEAD").toString().trim();
+} catch (e) {
+  REVISION = "";
+}
 
 const TELEGRAM_API = "https://api.telegram.org";
 
@@ -282,8 +292,10 @@ const privateMessageHandler = async (message) => {
   const responding_msg = message.reply_to_message ? message.reply_to_message : message;
   const imageURL = await getImageFromMessage(responding_msg);
   if (!imageURL) {
-    await sendMessage(message.chat.id, "You can Send / Forward anime screenshots to me.");
-    return;
+    if (message.text?.toLowerCase() === "/help") {
+      return await sendMessage(message.chat.id, `Bot version: ${REVISION.substring(0, 7)}`);
+    }
+    return await sendMessage(message.chat.id, "You can Send / Forward anime screenshots to me.");
   }
 
   const bot_message = await sendMessage(message.chat.id, "Searching...", {
@@ -315,6 +327,11 @@ const groupMessageHandler = async (message) => {
   const responding_msg = message.reply_to_message ? message.reply_to_message : message;
   const imageURL = await getImageFromMessage(responding_msg);
   if (!imageURL) {
+    if (message.text?.toLowerCase() === "/help") {
+      await sendMessage(message.chat.id, `Bot version: ${REVISION.substring(0, 7)}`, {
+        reply_to_message_id: message.message_id,
+      });
+    }
     // cannot find image from the message mentioning the bot
     await sendMessage(
       message.chat.id,
