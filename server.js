@@ -13,6 +13,7 @@ const {
   ANILIST_API_URL = "https://graphql.anilist.co/",
   RAILWAY_STATIC_URL,
   RAILWAY_GIT_COMMIT_SHA,
+  HEROKU_SLUG_COMMIT,
 } = process.env;
 
 const TELEGRAM_API = "https://api.telegram.org";
@@ -47,21 +48,24 @@ const app = express();
 let REVISION;
 try {
   REVISION =
-    RAILWAY_GIT_COMMIT_SHA ?? child_process.execSync("git rev-parse HEAD").toString().trim();
+    HEROKU_SLUG_COMMIT ??
+    RAILWAY_GIT_COMMIT_SHA ??
+    child_process.execSync("git rev-parse HEAD").toString().trim();
 } catch (e) {
   REVISION = "";
 }
 const packageJSON = fs.existsSync("./package.json")
   ? JSON.parse(fs.readFileSync("./package.json"))
   : null;
-const HELP_MESSAGE = [
-  `Bot Name: ${app.locals.botName ?? "(unknown)"}`,
-  `Use trace.moe with API Key? ${TRACE_MOE_KEY ? "true" : "false"}`,
-  `Anilist Info Endpoint: ${ANILIST_API_URL}`,
-  `Homepage: ${packageJSON?.homepage ?? ""}`,
-  `Revision: ${REVISION.substring(0, 7)}`,
-  packageJSON?.homepage && REVISION ? `${packageJSON?.homepage}/commit/${REVISION}` : "",
-].join("\n");
+
+const getHelpMessage = (botName) =>
+  [
+    `Bot Name: ${botName ? `@${botName}` : "(unknown)"}`,
+    `Revision: \`${REVISION.substring(0, 7)}\``,
+    `Use trace.moe with API Key? ${TRACE_MOE_KEY ? "`true`" : "`false`"}`,
+    `Anilist Info Endpoint: ${ANILIST_API_URL}`,
+    `Homepage: ${packageJSON?.homepage ?? ""}`,
+  ].join("\n");
 
 app.disable("x-powered-by");
 app.set("trust proxy", 1);
@@ -306,7 +310,9 @@ const privateMessageHandler = async (message) => {
   const imageURL = await getImageFromMessage(responding_msg);
   if (!imageURL) {
     if (message.text?.toLowerCase() === "/help") {
-      return await sendMessage(message.chat.id, HELP_MESSAGE);
+      return await sendMessage(message.chat.id, getHelpMessage(app.locals.botName), {
+        parse_mode: "Markdown",
+      });
     }
     return await sendMessage(message.chat.id, "You can Send / Forward anime screenshots to me.");
   }
@@ -340,9 +346,10 @@ const groupMessageHandler = async (message) => {
   const responding_msg = message.reply_to_message ? message.reply_to_message : message;
   const imageURL = await getImageFromMessage(responding_msg);
   if (!imageURL) {
-    if (message.text?.toLowerCase() === "/help") {
-      await sendMessage(message.chat.id, HELP_MESSAGE, {
+    if (responding_msg.text?.toLowerCase() === "/help") {
+      await sendMessage(message.chat.id, getHelpMessage(app.locals.botName), {
         reply_to_message_id: message.message_id,
+        parse_mode: "Markdown",
       });
     }
     // cannot find image from the message mentioning the bot
