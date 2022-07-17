@@ -347,18 +347,17 @@ const groupMessageHandler = async (message) => {
   const imageURL = await getImageFromMessage(responding_msg);
   if (!imageURL) {
     if (responding_msg.text?.toLowerCase().includes("/help")) {
-      await sendMessage(message.chat.id, getHelpMessage(app.locals.botName), {
+      return await sendMessage(message.chat.id, getHelpMessage(app.locals.botName), {
         reply_to_message_id: message.message_id,
         parse_mode: "Markdown",
       });
     }
     // cannot find image from the message mentioning the bot
-    await sendMessage(
+    return await sendMessage(
       message.chat.id,
       "Mention me in an anime screenshot, I will tell you what anime is that",
       { reply_to_message_id: message.message_id }
     );
-    return;
   }
 
   const result = await submitSearch(imageURL, responding_msg, message);
