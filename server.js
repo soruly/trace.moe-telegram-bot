@@ -264,10 +264,13 @@ const messageIsMentioningBot = (message) => {
 };
 
 const messageIsMute = (message) => {
-  if (message.caption) {
-    return message.caption.toLowerCase().indexOf("mute") >= 0;
-  }
-  return message.text?.toLowerCase().indexOf("mute") >= 0;
+  if (message.caption) return message.caption.toLowerCase().includes("mute");
+  return message.text?.toLowerCase().includes("mute");
+};
+
+const messageIsSkipPreview = (message) => {
+  if (message.caption) return message.caption.toLowerCase().includes("skip");
+  return message.text?.toLowerCase().includes("skip");
 };
 
 // https://core.telegram.org/bots/api#photosize
@@ -329,7 +332,7 @@ const privateMessageHandler = async (message) => {
     parse_mode: "Markdown",
   });
 
-  if (result.video) {
+  if (result.video && !messageIsSkipPreview(message)) {
     const videoLink = messageIsMute(message) ? `${result.video}&mute` : result.video;
     const video = await fetch(videoLink, { method: "HEAD" });
     if (video.ok && video.headers.get("content-length") > 0) {
@@ -377,7 +380,7 @@ const groupMessageHandler = async (message) => {
     parse_mode: "Markdown",
   });
 
-  if (result.video) {
+  if (result.video && !messageIsSkipPreview(message)) {
     const videoLink = messageIsMute(message) ? `${result.video}&mute` : result.video;
     const video = await fetch(videoLink, { method: "HEAD" });
     if (video.ok && video.headers.get("content-length") > 0) {
