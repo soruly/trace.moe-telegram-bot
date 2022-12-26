@@ -1,7 +1,7 @@
 # trace.moe-telegram-bot
 
 [![License](https://img.shields.io/github/license/soruly/trace.moe-telegram-bot.svg?style=flat-square)](https://github.com/soruly/trace.moe-telegram-bot/blob/master/LICENSE)
-[![GitHub Workflow Status](https://img.shields.io/github/workflow/status/soruly/trace.moe-telegram-bot/Docker%20Image%20CI?style=flat-square)](https://github.com/soruly/trace.moe-telegram-bot/actions)
+[![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/soruly/trace.moe-telegram-bot/docker-image.yml?style=flat-square)](https://github.com/soruly/trace.moe-telegram-bot/actions)
 [![Docker](https://img.shields.io/docker/pulls/soruly/trace.moe-telegram-bot?style=flat-square)](https://hub.docker.com/r/soruly/trace.moe-telegram-bot)
 [![Docker Image Size](https://img.shields.io/docker/image-size/soruly/trace.moe-telegram-bot/latest?style=flat-square)](https://hub.docker.com/r/soruly/trace.moe-telegram-bot)
 [![Discord](https://img.shields.io/discord/437578425767559188.svg?style=flat-square)](https://discord.gg/K9jn6Kj)
