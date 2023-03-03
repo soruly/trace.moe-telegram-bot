@@ -333,13 +333,14 @@ const privateMessageHandler = async (message) => {
         parse_mode: "Markdown",
         reply_to_message_id: responding_msg.message_id,
       });
+      return;
     }
-  } else {
-    await sendMessage(message.chat.id, result.text, {
-      reply_to_message_id: responding_msg.message_id,
-      parse_mode: "Markdown",
-    });
   }
+
+  await sendMessage(message.chat.id, result.text, {
+    reply_to_message_id: responding_msg.message_id,
+    parse_mode: "Markdown",
+  });
 };
 
 const groupMessageHandler = async (message) => {
@@ -377,13 +378,14 @@ const groupMessageHandler = async (message) => {
         parse_mode: "Markdown",
         reply_to_message_id: responding_msg.message_id,
       });
+      return;
     }
-  } else {
-    await sendMessage(message.chat.id, result.text, {
-      parse_mode: "Markdown",
-      reply_to_message_id: responding_msg.message_id,
-    });
   }
+
+  await sendMessage(message.chat.id, result.text, {
+    parse_mode: "Markdown",
+    reply_to_message_id: responding_msg.message_id,
+  });
 };
 
 app.post("/", (req, res) => {
