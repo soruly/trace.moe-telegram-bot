@@ -372,7 +372,7 @@ const groupMessageHandler = async (message) => {
       await sendChatAction(message.chat.id, "upload_video");
       await sendVideo(message.chat.id, videoLink, {
         caption: result.text,
-        has_spoiler: result.isAdult,
+        has_spoiler: result.isAdult || responding_msg.has_media_spoiler,
         parse_mode: "Markdown",
         reply_to_message_id: responding_msg.message_id,
       });
