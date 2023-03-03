@@ -320,25 +320,25 @@ const privateMessageHandler = async (message) => {
     return await sendMessage(message.chat.id, "You can Send / Forward anime screenshots to me.");
   }
 
-  const bot_message = await sendMessage(message.chat.id, "Searching...", {
-    reply_to_message_id: responding_msg.message_id,
-  });
-
   const result = await submitSearch(imageURL, responding_msg, message);
-  // better to send responses one-by-one
-  await editMessageText(result.text, {
-    chat_id: bot_message.chat.id,
-    message_id: bot_message.message_id,
-    parse_mode: "Markdown",
-  });
 
   if (result.video && !messageIsSkipPreview(message)) {
     const videoLink = messageIsMute(message) ? `${result.video}&mute` : result.video;
     const video = await fetch(videoLink, { method: "HEAD" });
     if (video.ok && video.headers.get("content-length") > 0) {
       await sendChatAction(message.chat.id, "upload_video");
-      await sendVideo(message.chat.id, videoLink);
+      await sendVideo(message.chat.id, videoLink, {
+        caption: result.text,
+        parse_mode: "Markdown",
+        reply_to_message_id: responding_msg.message_id,
+      });
     }
+  } else {
+    await sendChatAction(message.chat.id, "typing");
+    await sendMessage(message.chat.id, result.text, {
+      reply_to_message_id: responding_msg.message_id,
+      parse_mode: "Markdown",
+    });
   }
 };
 
@@ -364,21 +364,6 @@ const groupMessageHandler = async (message) => {
   }
 
   const result = await submitSearch(imageURL, responding_msg, message);
-  if (result.isAdult) {
-    await sendMessage(
-      message.chat.id,
-      "I've found an adult result 😳\nPlease forward it to me via Private Chat 😏",
-      {
-        reply_to_message_id: responding_msg.message_id,
-      }
-    );
-
-    return;
-  }
-  await sendMessage(message.chat.id, result.text, {
-    reply_to_message_id: responding_msg.message_id,
-    parse_mode: "Markdown",
-  });
 
   if (result.video && !messageIsSkipPreview(message)) {
     const videoLink = messageIsMute(message) ? `${result.video}&mute` : result.video;
@@ -386,9 +371,18 @@ const groupMessageHandler = async (message) => {
     if (video.ok && video.headers.get("content-length") > 0) {
       await sendChatAction(message.chat.id, "upload_video");
       await sendVideo(message.chat.id, videoLink, {
+        caption: result.text,
+        has_spoiler: result.isAdult,
+        parse_mode: "Markdown",
         reply_to_message_id: responding_msg.message_id,
       });
     }
+  } else {
+    await sendChatAction(message.chat.id, "typing");
+    await sendMessage(message.chat.id, result.text, {
+      parse_mode: "Markdown",
+      reply_to_message_id: responding_msg.message_id,
+    });
   }
 };
 
