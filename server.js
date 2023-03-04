@@ -368,13 +368,24 @@ const groupMessageHandler = async (message) => {
 
   const result = await submitSearch(imageURL, responding_msg, message);
 
+  if (result.isAdult) {
+    await sendMessage(
+      message.chat.id,
+      "I've found an adult result 😳\nPlease forward it to me via Private Chat 😏",
+      {
+        reply_to_message_id: responding_msg.message_id,
+      }
+    );
+    return;
+  }
+
   if (result.video && !messageIsSkipPreview(message)) {
     const videoLink = messageIsMute(message) ? `${result.video}&mute` : result.video;
     const video = await fetch(videoLink, { method: "HEAD" });
     if (video.ok && video.headers.get("content-length") > 0) {
       await sendVideo(message.chat.id, videoLink, {
         caption: result.text,
-        has_spoiler: result.isAdult || responding_msg.has_media_spoiler,
+        has_spoiler: responding_msg.has_media_spoiler,
         parse_mode: "Markdown",
         reply_to_message_id: responding_msg.message_id,
       });
