@@ -1,6 +1,6 @@
 import "dotenv/config";
 import fs from "fs";
-import fetch from "node-fetch";
+import fetch, { FormData, File } from "node-fetch";
 import child_process from "child_process";
 import express from "express";
 import rateLimit from "express-rate-limit";
@@ -112,14 +112,22 @@ const sendChatAction = (chat_id, action) =>
     .then((e) => e.json())
     .then((e) => e.result);
 
-const sendVideo = (chat_id, video, options) =>
-  fetch(`${TELEGRAM_API}/bot${TELEGRAM_TOKEN}/sendVideo`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ chat_id, video, ...options }),
-  })
-    .then((e) => e.json())
-    .then((e) => e.result);
+const sendVideo = (chat_id, arrayBuffer, options) =>
+  new Promise(async (resolve) => {
+    const formData = new FormData();
+    formData.append("chat_id", chat_id);
+    formData.append("video", new File([arrayBuffer], `${Date.now()}.mp4`, { type: "video/mp4" }));
+    Object.entries(options).forEach((opt) => {
+      const [key, value] = opt;
+      formData.append(key, value);
+    });
+    fetch(`${TELEGRAM_API}/bot${TELEGRAM_TOKEN}/sendVideo`, {
+      method: "POST",
+      body: formData,
+    })
+      .then((e) => e.json())
+      .then((e) => resolve(e.result));
+  });
 
 const editMessageText = (text, options) =>
   fetch(`${TELEGRAM_API}/bot${TELEGRAM_TOKEN}/editMessageText`, {
@@ -170,6 +178,14 @@ const getAnilistInfo = (id) =>
       return resolve({ text: "`Anilist API error, please try again later.`" });
     }
     return resolve((await response.json()).data.Media);
+  });
+
+const downloadToBuffer = (url) =>
+  new Promise(async (resolve, reject) => {
+    fetch(url)
+      .then((res) => res.arrayBuffer())
+      .then((res) => resolve(res))
+      .catch((reason) => reject(reason));
   });
 
 const submitSearch = (imageFileURL, message) =>
@@ -328,12 +344,15 @@ const privateMessageHandler = async (message) => {
     const videoLink = messageIsMute(message) ? `${result.video}&mute` : result.video;
     const video = await fetch(videoLink, { method: "HEAD" });
     if (video.ok && video.headers.get("content-length") > 0) {
-      await sendVideo(message.chat.id, videoLink, {
-        caption: result.text,
-        parse_mode: "Markdown",
-        reply_to_message_id: responding_msg.message_id,
-      });
-      return;
+      try {
+        const buffer = await downloadToBuffer(videoLink);
+        await sendVideo(message.chat.id, buffer, {
+          caption: result.text,
+          parse_mode: "Markdown",
+          reply_to_message_id: responding_msg.message_id,
+        });
+        return;
+      } catch (err) {}
     }
   }
 
@@ -372,13 +391,16 @@ const groupMessageHandler = async (message) => {
     const videoLink = messageIsMute(message) ? `${result.video}&mute` : result.video;
     const video = await fetch(videoLink, { method: "HEAD" });
     if (video.ok && video.headers.get("content-length") > 0) {
-      await sendVideo(message.chat.id, videoLink, {
-        caption: result.text,
-        has_spoiler: result.isAdult || responding_msg.has_media_spoiler,
-        parse_mode: "Markdown",
-        reply_to_message_id: responding_msg.message_id,
-      });
-      return;
+      try {
+        const buffer = await downloadToBuffer(videoLink);
+        await sendVideo(message.chat.id, buffer, {
+          caption: result.text,
+          has_spoiler: result.isAdult || responding_msg.has_media_spoiler,
+          parse_mode: "Markdown",
+          reply_to_message_id: responding_msg.message_id,
+        });
+        return;
+      } catch (err) {}
     }
   }
 
