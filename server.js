@@ -74,7 +74,7 @@ app.use(
     max: 100, // limit each IP to 100 requests
     windowMs: 1000, // per second
     delayMs: 0, // disable delaying - full speed until the max limit is reached
-  })
+  }),
 );
 app.use(express.json());
 
@@ -184,7 +184,7 @@ const submitSearch = (imageFileURL, message) =>
           `url=${encodeURIComponent(imageFileURL)}`,
           "cutBorders=1",
         ].join("&")}`,
-        TRACE_MOE_KEY ? { headers: { "x-trace-key": TRACE_MOE_KEY } } : {}
+        TRACE_MOE_KEY ? { headers: { "x-trace-key": TRACE_MOE_KEY } } : {},
       ).catch((e) => {
         trial = 0;
         return resolve({ text: "`trace.moe API error, please try again later.`" });
@@ -195,7 +195,7 @@ const submitSearch = (imageFileURL, message) =>
       }
       if (response.status === 503 || response.status === 402) {
         await new Promise((resolve) =>
-          setTimeout(resolve, Math.floor(Math.random() * 4000) + 1000)
+          setTimeout(resolve, Math.floor(Math.random() * 4000) + 1000),
         );
       } else trial = 0;
     }
@@ -222,7 +222,7 @@ const submitSearch = (imageFileURL, message) =>
     }
     const { anilist, similarity, filename, from, to, video } = searchResult.result[0];
     const { title: { chinese, english, native, romaji } = {}, isAdult } = await getAnilistInfo(
-      anilist
+      anilist,
     );
     let text = "";
     text += [native, chinese, romaji, english]
@@ -231,7 +231,7 @@ const submitSearch = (imageFileURL, message) =>
         // deduplicate titles
         (acc, cur) =>
           acc.map((e) => e.toLowerCase()).includes(cur.toLowerCase()) ? acc : [...acc, cur],
-        []
+        [],
       )
       .map((t) => `\`${t}\``)
       .join("\n");
@@ -277,7 +277,7 @@ const messageIsSkipPreview = (message) => {
 const getImageUrlFromPhotoSize = async (PhotoSize) => {
   if (PhotoSize?.file_id) {
     const json = await fetch(
-      `${TELEGRAM_API}/bot${TELEGRAM_TOKEN}/getFile?file_id=${PhotoSize.file_id}`
+      `${TELEGRAM_API}/bot${TELEGRAM_TOKEN}/getFile?file_id=${PhotoSize.file_id}`,
     ).then((res) => res.json());
     return json?.result?.file_path
       ? `${TELEGRAM_API}/file/bot${TELEGRAM_TOKEN}/${json.result.file_path}`
@@ -360,7 +360,7 @@ const groupMessageHandler = async (message) => {
     return await sendMessage(
       message.chat.id,
       "Mention me in an anime screenshot, I will tell you what anime is that",
-      { reply_to_message_id: message.message_id }
+      { reply_to_message_id: message.message_id },
     );
   }
 
@@ -374,7 +374,7 @@ const groupMessageHandler = async (message) => {
       "I've found an adult result 😳\nPlease forward it to me via Private Chat 😏",
       {
         reply_to_message_id: responding_msg.message_id,
-      }
+      },
     );
     return;
   }
@@ -411,7 +411,7 @@ app.post("/", (req, res) => {
 
 app.get("/", (req, res) => {
   return res.send(
-    `<meta http-equiv="Refresh" content="0; URL=https://t.me/${app.locals.botName ?? ""}">`
+    `<meta http-equiv="Refresh" content="0; URL=https://t.me/${app.locals.botName ?? ""}">`,
   );
 });
 
