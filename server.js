@@ -221,9 +221,8 @@ const submitSearch = (imageFileURL, message) =>
       return resolve({ text: "Cannot find any results from trace.moe" });
     }
     const { anilist, similarity, filename, from, to, video } = searchResult.result[0];
-    const { title: { chinese, english, native, romaji } = {}, isAdult } = await getAnilistInfo(
-      anilist,
-    );
+    const { title: { chinese, english, native, romaji } = {}, isAdult } =
+      await getAnilistInfo(anilist);
     let text = "";
     text += [native, chinese, romaji, english]
       .filter((e) => e)
