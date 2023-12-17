@@ -78,7 +78,7 @@ Note that you need to configure a reverse proxy if you need HTTPS.
 
 ### Host bare-metal with Node.js
 
-Install Node.js 14.x, then:
+Install Node.js 18.x, then:
 
 ```
 git clone https://github.com/soruly/trace.moe-telegram-bot.git
