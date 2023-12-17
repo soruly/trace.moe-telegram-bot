@@ -1,7 +1,6 @@
 import "dotenv/config";
-import fs from "fs";
-import fetch from "node-fetch";
-import child_process from "child_process";
+import fs from "node:fs/promises";
+import child_process from "node:child_process";
 import express from "express";
 import rateLimit from "express-rate-limit";
 
@@ -54,8 +53,8 @@ try {
 } catch (e) {
   REVISION = "";
 }
-const packageJSON = fs.existsSync("./package.json")
-  ? JSON.parse(fs.readFileSync("./package.json"))
+const packageJSON = (await fs.stat("./package.json").catch(() => null))
+  ? JSON.parse(await fs.readFile("./package.json"))
   : null;
 
 const getHelpMessage = (botName) =>
