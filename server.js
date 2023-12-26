@@ -181,7 +181,7 @@ const submitSearch = (imageFileURL, message) =>
         `https://api.trace.moe/search?${[
           `uid=tg${message.from.id}`,
           `url=${encodeURIComponent(imageFileURL)}`,
-          "cutBorders=1",
+          messageIsNoCrop(message) ? "" : "cutBorders=1",
         ].join("&")}`,
         TRACE_MOE_KEY ? { headers: { "x-trace-key": TRACE_MOE_KEY } } : {},
       ).catch((e) => {
@@ -264,6 +264,11 @@ const messageIsMentioningBot = (message) => {
 const messageIsMute = (message) => {
   if (message.caption) return message.caption.toLowerCase().includes("mute");
   return message.text?.toLowerCase().includes("mute");
+};
+
+const messageIsNoCrop = (message) => {
+  if (message.caption) return message.caption.toLowerCase().includes("nocrop");
+  return message.text?.toLowerCase().includes("nocrop");
 };
 
 const messageIsSkipPreview = (message) => {
