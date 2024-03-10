@@ -111,6 +111,20 @@ const sendChatAction = (chat_id, action) =>
     .then((e) => e.json())
     .then((e) => e.result);
 
+const setMessageReaction = (chat_id, message_id, emoji_list, is_big) =>
+  fetch(`${TELEGRAM_API}/bot${TELEGRAM_TOKEN}/setMessageReaction`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      chat_id,
+      message_id,
+      reaction: emoji_list.map((emoji) => ({ type: "emoji", emoji })),
+      is_big,
+    }),
+  })
+    .then((e) => e.json())
+    .then((e) => e.result);
+
 const sendVideo = (chat_id, video, options) =>
   fetch(`${TELEGRAM_API}/bot${TELEGRAM_TOKEN}/sendVideo`, {
     method: "POST",
@@ -322,10 +336,10 @@ const privateMessageHandler = async (message) => {
     }
     return await sendMessage(message.chat.id, "You can Send / Forward anime screenshots to me.");
   }
-
-  await sendChatAction(message.chat.id, "typing");
-
+  setMessageReaction(message.chat.id, message.message_id, ["👌"]);
   const result = await submitSearch(imageURL, responding_msg, message);
+  sendChatAction(message.chat.id, "typing");
+  setMessageReaction(message.chat.id, message.message_id, ["👍"]);
 
   if (result.video && !messageIsSkipPreview(message)) {
     const videoLink = messageIsMute(message) ? `${result.video}&mute` : result.video;
@@ -347,9 +361,6 @@ const privateMessageHandler = async (message) => {
 };
 
 const groupMessageHandler = async (message) => {
-  if (!messageIsMentioningBot(message)) {
-    return;
-  }
   const responding_msg = message.reply_to_message ? message.reply_to_message : message;
   const imageURL = await getImageFromMessage(responding_msg);
   if (!imageURL) {
@@ -366,10 +377,10 @@ const groupMessageHandler = async (message) => {
       { reply_to_message_id: message.message_id },
     );
   }
-
-  await sendChatAction(message.chat.id, "typing");
-
+  setMessageReaction(message.chat.id, message.message_id, ["👌"]);
   const result = await submitSearch(imageURL, responding_msg, message);
+  sendChatAction(message.chat.id, "typing");
+  setMessageReaction(message.chat.id, message.message_id, ["👍"]);
 
   if (result.isAdult) {
     await sendMessage(
@@ -402,12 +413,16 @@ const groupMessageHandler = async (message) => {
   });
 };
 
-app.post("/", (req, res) => {
+app.post("/", async (req, res) => {
   const message = req.body?.message;
   if (message?.chat?.type === "private") {
-    privateMessageHandler(message);
+    await privateMessageHandler(message);
+    setMessageReaction(message.chat.id, message.message_id, []);
   } else if (message?.chat?.type === "group" || message?.chat?.type === "supergroup") {
-    groupMessageHandler(message);
+    if (messageIsMentioningBot(message)) {
+      await groupMessageHandler(message);
+      setMessageReaction(message.chat.id, message.message_id, []);
+    }
   }
   res.sendStatus(204);
 });
