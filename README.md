@@ -57,10 +57,6 @@ ANILIST_API_URL=      # (optional) Default: https://graphql.anilist.co/
 
 [![Deploy](https://www.herokucdn.com/deploy/button.svg)](https://heroku.com/deploy?template=https://github.com/soruly/trace.moe-telegram-bot)
 
-### Deploy on Railway
-
-[![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/new/template?template=https%3A%2F%2Fgithub.com%2Fsoruly%2Ftrace.moe-telegram-bot&envs=TELEGRAM_TOKEN%2CTRACE_MOE_KEY&optionalEnvs=TRACE_MOE_KEY&TELEGRAM_TOKENDesc=Create+a+Telegram+Bot+to+get+a+token%2C+see%3A+https%3A%2F%2Fcore.telegram.org%2Fbots&TRACE_MOE_KEYDesc=Leave+this+blank+or+Enter+your+trace.moe+API+Key+to+unlock+search+quota+and+limits.+see%3A+https%3A%2F%2Fsoruly.github.io%2Ftrace.moe-api%2F%23%2Flimits&TELEGRAM_TOKENDefault=111111111%3AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA)
-
 ### Host with docker
 
 Docker Image available on [Docker Hub](https://hub.docker.com/repository/docker/soruly/trace.moe-telegram-bot) or [GitHub Container Registry](https://github.com/soruly/trace.moe-telegram-bot/pkgs/container/trace.moe-telegram-bot)
