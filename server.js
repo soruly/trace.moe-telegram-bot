@@ -1,9 +1,9 @@
-import "dotenv/config";
 import fs from "node:fs/promises";
 import child_process from "node:child_process";
 import express from "express";
 import rateLimit from "express-rate-limit";
 
+process.loadEnvFile();
 const {
   PORT = 3000,
   TELEGRAM_TOKEN,

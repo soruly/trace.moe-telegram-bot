@@ -26,7 +26,6 @@
   },
   "homepage": "https://github.com/soruly/trace.moe-telegram-bot",
   "dependencies": {
-    "dotenv": "^16.4.5",
     "express": "^4.19.2",
     "express-rate-limit": "^7.3.1"
   },
