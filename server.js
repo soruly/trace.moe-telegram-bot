@@ -185,7 +185,7 @@ const getAnilistInfo = (id) =>
     return resolve((await response.json()).data.Media);
   });
 
-const submitSearch = (imageFileURL, message) =>
+const submitSearch = (imageFileURL, message, opts) =>
   new Promise(async (resolve, reject) => {
     let trial = 5;
     let response = null;
@@ -195,7 +195,7 @@ const submitSearch = (imageFileURL, message) =>
         `https://api.trace.moe/search?${[
           `uid=tg${message.from.id}`,
           `url=${encodeURIComponent(imageFileURL)}`,
-          messageIsNoCrop(message) ? "" : "cutBorders=1",
+          opts.noCrop ? "" : "cutBorders=1",
         ].join("&")}`,
         TRACE_MOE_KEY ? { headers: { "x-trace-key": TRACE_MOE_KEY } } : {},
       ).catch((e) => {
@@ -275,6 +275,18 @@ const messageIsMentioningBot = (message) => {
   return false;
 };
 
+const getSearchOpts = (message) => {
+  const opts = {
+    mute: false,
+    noCrop: false,
+    skip: false,
+  };
+  if (messageIsMute(message)) opts.mute = true;
+  if (messageIsNoCrop(message)) opts.noCrop = true;
+  if (messageIsSkipPreview(message)) opts.skip = true;
+  return opts;
+};
+
 const messageIsMute = (message) => {
   if (message.caption) return message.caption.toLowerCase().includes("mute");
   return message.text?.toLowerCase().includes("mute");
@@ -326,6 +338,7 @@ const getImageFromMessage = async (message) => {
 };
 
 const privateMessageHandler = async (message) => {
+  const searchOpts = getSearchOpts(message);
   const responding_msg = message.reply_to_message ? message.reply_to_message : message;
   const imageURL = await getImageFromMessage(responding_msg);
   if (!imageURL) {
@@ -337,12 +350,12 @@ const privateMessageHandler = async (message) => {
     return await sendMessage(message.chat.id, "You can Send / Forward anime screenshots to me.");
   }
   setMessageReaction(message.chat.id, message.message_id, ["👌"]);
-  const result = await submitSearch(imageURL, responding_msg, message);
+  const result = await submitSearch(imageURL, responding_msg, searchOpts);
   sendChatAction(message.chat.id, "typing");
   setMessageReaction(message.chat.id, message.message_id, ["👍"]);
 
-  if (result.video && !messageIsSkipPreview(message)) {
-    const videoLink = messageIsMute(message) ? `${result.video}&mute` : result.video;
+  if (result.video && !searchOpts.skip) {
+    const videoLink = searchOpts.mute ? `${result.video}&mute` : result.video;
     const video = await fetch(videoLink, { method: "HEAD" });
     if (video.ok && video.headers.get("content-length") > 0) {
       await sendVideo(message.chat.id, videoLink, {
@@ -361,6 +374,7 @@ const privateMessageHandler = async (message) => {
 };
 
 const groupMessageHandler = async (message) => {
+  const searchOpts = getSearchOpts(message);
   const responding_msg = message.reply_to_message ? message.reply_to_message : message;
   const imageURL = await getImageFromMessage(responding_msg);
   if (!imageURL) {
@@ -378,7 +392,7 @@ const groupMessageHandler = async (message) => {
     );
   }
   setMessageReaction(message.chat.id, message.message_id, ["👌"]);
-  const result = await submitSearch(imageURL, responding_msg, message);
+  const result = await submitSearch(imageURL, responding_msg, searchOpts);
   sendChatAction(message.chat.id, "typing");
   setMessageReaction(message.chat.id, message.message_id, ["👍"]);
 
@@ -393,8 +407,8 @@ const groupMessageHandler = async (message) => {
     return;
   }
 
-  if (result.video && !messageIsSkipPreview(message)) {
-    const videoLink = messageIsMute(message) ? `${result.video}&mute` : result.video;
+  if (result.video && !searchOpts.skip) {
+    const videoLink = searchOpts.mute ? `${result.video}&mute` : result.video;
     const video = await fetch(videoLink, { method: "HEAD" });
     if (video.ok && video.headers.get("content-length") > 0) {
       await sendVideo(message.chat.id, videoLink, {
