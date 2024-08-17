@@ -185,7 +185,7 @@ const getAnilistInfo = (id) =>
     return resolve((await response.json()).data.Media);
   });
 
-const submitSearch = (imageFileURL, message, opts) =>
+const submitSearch = (imageFileURL, opts) =>
   new Promise(async (resolve, reject) => {
     let trial = 5;
     let response = null;
@@ -193,7 +193,7 @@ const submitSearch = (imageFileURL, message, opts) =>
       trial--;
       response = await fetch(
         `https://api.trace.moe/search?${[
-          `uid=tg${message.from.id}`,
+          `uid=tg${opts.fromId}`,
           `url=${encodeURIComponent(imageFileURL)}`,
           opts.noCrop ? "" : "cutBorders=1",
         ].join("&")}`,
@@ -280,6 +280,7 @@ const getSearchOpts = (message) => {
     mute: false,
     noCrop: false,
     skip: false,
+    fromId: message.from.id,
   };
   if (messageIsMute(message)) opts.mute = true;
   if (messageIsNoCrop(message)) opts.noCrop = true;
@@ -350,7 +351,7 @@ const privateMessageHandler = async (message) => {
     return await sendMessage(message.chat.id, "You can Send / Forward anime screenshots to me.");
   }
   setMessageReaction(message.chat.id, message.message_id, ["👌"]);
-  const result = await submitSearch(imageURL, responding_msg, searchOpts);
+  const result = await submitSearch(imageURL, searchOpts);
   sendChatAction(message.chat.id, "typing");
   setMessageReaction(message.chat.id, message.message_id, ["👍"]);
 
@@ -392,7 +393,7 @@ const groupMessageHandler = async (message) => {
     );
   }
   setMessageReaction(message.chat.id, message.message_id, ["👌"]);
-  const result = await submitSearch(imageURL, responding_msg, searchOpts);
+  const result = await submitSearch(imageURL, searchOpts);
   sendChatAction(message.chat.id, "typing");
   setMessageReaction(message.chat.id, message.message_id, ["👍"]);
 
