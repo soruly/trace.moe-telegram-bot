@@ -30,6 +30,6 @@
     "express-rate-limit": "^7.4.1"
   },
   "devDependencies": {
-    "prettier": "^3.4.1"
+    "prettier": "^3.4.2"
   }
 }
