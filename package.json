@@ -27,7 +27,7 @@
   "homepage": "https://github.com/soruly/trace.moe-telegram-bot",
   "dependencies": {
     "express": "^5.0.1",
-    "express-rate-limit": "^7.4.1"
+    "express-rate-limit": "^7.5.0"
   },
   "devDependencies": {
     "prettier": "^3.4.2"
