@@ -6,6 +6,7 @@ import rateLimit from "express-rate-limit";
 process.loadEnvFile();
 const {
   PORT = 3000,
+  ADDR = "0.0.0.0",
   TELEGRAM_TOKEN,
   TELEGRAM_WEBHOOK,
   TRACE_MOE_KEY,
@@ -448,4 +449,4 @@ app.get("/", (req, res) => {
   );
 });
 
-app.listen(PORT, "0.0.0.0", () => console.log(`server listening on port ${PORT}`));
+app.listen(PORT, ADDR, () => console.log(`server listening on port ${PORT}`));

@@ -49,6 +49,7 @@ You need to disable [Privacy Mode](https://core.telegram.org/bots#privacy-mode) 
 TELEGRAM_TOKEN=       # e.g. 111111111:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
 TELEGRAM_WEBHOOK=     # e.g. https://your.host.com/
 PORT=                 # (optional) Default: 3000
+ADDR=                 # (optional) Default: 0.0.0.0
 TRACE_MOE_KEY=        # (optional)
 ANILIST_API_URL=      # (optional) Default: https://graphql.anilist.co/
 ```
