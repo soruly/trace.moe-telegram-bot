@@ -145,7 +145,7 @@ const editMessageText = (text, options) =>
     .then((e) => e.result);
 
 const formatTime = (timeInSeconds) => {
-  const sec_num = Number(timeInSeconds);
+  const sec_num = Math.round(Number(timeInSeconds));
   const hours = Math.floor(sec_num / 3600)
     .toString()
     .padStart(2, "0");
