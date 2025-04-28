@@ -1,7 +1,5 @@
 import fs from "node:fs/promises";
-import child_process from "node:child_process";
-import express from "express";
-import rateLimit from "express-rate-limit";
+import http from "node:http";
 
 process.loadEnvFile();
 const {
@@ -22,7 +20,7 @@ if (!TELEGRAM_TOKEN || !TELEGRAM_WEBHOOK) {
 }
 
 console.log(`WEBHOOK: ${TELEGRAM_WEBHOOK}`);
-console.log(`Use trace.moe API: ${TRACE_MOE_KEY ? "with API Key" : "without API Key"}`);
+console.log(`Use trace.moe API: ${TRACE_MOE_KEY ? "with" : "without"} API Key`);
 console.log(`Anilist Info Endpoint: ${ANILIST_API_URL}`);
 
 console.log("Setting Telegram webhook...");
@@ -34,14 +32,13 @@ await fetch(
     console.log(e);
   });
 
+let botName = "";
 fetch(`${TELEGRAM_API}/bot${TELEGRAM_TOKEN}/getMe`)
   .then((e) => e.json())
   .then((e) => {
     console.log(e);
-    app.locals.botName = e.result?.username;
+    botName = e.result?.username;
   });
-
-const app = express();
 
 let REVISION;
 try {
@@ -61,33 +58,6 @@ const getHelpMessage = (botName) =>
     `Anilist Info Endpoint: ${ANILIST_API_URL}`,
     `Homepage: ${packageJSON?.homepage ?? ""}`,
   ].join("\n");
-
-app.disable("x-powered-by");
-app.set("trust proxy", 2);
-app.use(
-  rateLimit({
-    max: 100, // limit each IP to 100 requests
-    windowMs: 1000, // per second
-    delayMs: 0, // disable delaying - full speed until the max limit is reached
-  }),
-);
-app.use(express.json());
-
-// app.use((req, res, next) => {
-//   const startTime = performance.now();
-//   console.log("=>", new Date().toISOString(), req.ip, req.path);
-//   res.on("finish", () => {
-//     console.log(
-//       "<=",
-//       new Date().toISOString(),
-//       req.ip,
-//       req.path,
-//       res.statusCode,
-//       `${(performance.now() - startTime).toFixed(0)}ms`
-//     );
-//   });
-//   next();
-// });
 
 const sendMessage = (chat_id, text, options) =>
   fetch(`${TELEGRAM_API}/bot${TELEGRAM_TOKEN}/sendMessage`, {
@@ -157,19 +127,19 @@ const getAnilistInfo = (id) =>
       method: "POST",
       body: JSON.stringify({
         query: `query($id: Int) {
-          Media(id: $id, type: ANIME) {
-            id
-            idMal
-            title {
-              native
-              romaji
-              english
+            Media(id: $id, type: ANIME) {
+              id
+              idMal
+              title {
+                native
+                romaji
+                english
+              }
+              synonyms
+              isAdult
             }
-            synonyms
-            isAdult
           }
-        }
-        `,
+          `,
         variables: { id },
       }),
       headers: { "Content-Type": "application/json" },
@@ -260,13 +230,12 @@ const messageIsMentioningBot = (message) => {
       message.entities
         .filter((entity) => entity.type === "mention")
         .map((entity) => message.text.substr(entity.offset, entity.length))
-        .filter((entity) => entity.toLowerCase() === `@${app.locals.botName.toLowerCase()}`)
-        .length >= 1
+        .filter((entity) => entity.toLowerCase() === `@${botName.toLowerCase()}`).length >= 1
     );
   }
   if (message.caption) {
     // Telegram does not provide entities when mentioning the bot in photo caption
-    return message.caption.toLowerCase().indexOf(`@${app.locals.botName.toLowerCase()}`) >= 0;
+    return message.caption.toLowerCase().indexOf(`@${botName.toLowerCase()}`) >= 0;
   }
   return false;
 };
@@ -340,7 +309,7 @@ const privateMessageHandler = async (message) => {
   const imageURL = await getImageFromMessage(responding_msg);
   if (!imageURL) {
     if (message.text?.toLowerCase().includes("/help")) {
-      return await sendMessage(message.chat.id, getHelpMessage(app.locals.botName), {
+      return await sendMessage(message.chat.id, getHelpMessage(botName), {
         parse_mode: "Markdown",
       });
     }
@@ -376,7 +345,7 @@ const groupMessageHandler = async (message) => {
   const imageURL = await getImageFromMessage(responding_msg);
   if (!imageURL) {
     if (responding_msg.text?.toLowerCase().includes("/help")) {
-      return await sendMessage(message.chat.id, getHelpMessage(app.locals.botName), {
+      return await sendMessage(message.chat.id, getHelpMessage(botName), {
         reply_to_message_id: message.message_id,
         parse_mode: "Markdown",
       });
@@ -424,24 +393,48 @@ const groupMessageHandler = async (message) => {
   });
 };
 
-app.post("/", async (req, res) => {
-  const message = req.body?.message;
-  if (message?.chat?.type === "private") {
-    await privateMessageHandler(message);
-    setMessageReaction(message.chat.id, message.message_id, []);
-  } else if (message?.chat?.type === "group" || message?.chat?.type === "supergroup") {
-    if (messageIsMentioningBot(message)) {
-      await groupMessageHandler(message);
-      setMessageReaction(message.chat.id, message.message_id, []);
+const getBody = (req) =>
+  new Promise((resolve, reject) => {
+    const chunks = [];
+    req.on("error", (error) => {
+      console.log(error);
+      reject(error);
+    });
+    req.on("data", (chunk) => {
+      chunks.push(chunk);
+    });
+    req.on("end", () => {
+      resolve(Buffer.concat(chunks));
+    });
+  });
+
+const server = http.createServer({ keepAliveTimeout: 60000 }, async (req, res) => {
+  if (req.method === "POST") {
+    try {
+      const { message } = JSON.parse(await getBody(req));
+      if (message?.chat?.type === "private") {
+        await privateMessageHandler(message);
+        setMessageReaction(message.chat.id, message.message_id, []);
+      } else if (message?.chat?.type === "group" || message?.chat?.type === "supergroup") {
+        if (messageIsMentioningBot(message)) {
+          await groupMessageHandler(message);
+          setMessageReaction(message.chat.id, message.message_id, []);
+        }
+      }
+      return res.writeHead(204).end();
+    } catch (e) {
+      console.error(e);
+      return res.writeHead(400).end();
     }
   }
-  res.sendStatus(204);
+  if (req.method === "GET") {
+    return res
+      .writeHead(200, { "Content-Type": "text/html" })
+      .end(`<meta http-equiv="Refresh" content="0; URL=https://t.me/${botName ?? ""}">`);
+  }
+  return res.writeHead(400).end();
 });
 
-app.get("/", (req, res) => {
-  return res.send(
-    `<meta http-equiv="Refresh" content="0; URL=https://t.me/${app.locals.botName ?? ""}">`,
-  );
-});
+server.on("error", (e) => console.error(e));
 
-app.listen(PORT, ADDR, () => console.log(`server listening on port ${PORT}`));
+server.listen(PORT, ADDR, () => console.log("server listening on", server.address()));
