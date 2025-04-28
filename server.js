@@ -11,26 +11,24 @@ const {
   TELEGRAM_WEBHOOK,
   TRACE_MOE_KEY,
   ANILIST_API_URL = "https://graphql.anilist.co/",
-  RAILWAY_STATIC_URL,
-  RAILWAY_GIT_COMMIT_SHA,
   HEROKU_SLUG_COMMIT,
 } = process.env;
 
 const TELEGRAM_API = "https://api.telegram.org";
 
-const WEBHOOK = RAILWAY_STATIC_URL ? `https://${RAILWAY_STATIC_URL}` : TELEGRAM_WEBHOOK;
-
-if (!TELEGRAM_TOKEN || !WEBHOOK) {
+if (!TELEGRAM_TOKEN || !TELEGRAM_WEBHOOK) {
   console.log("Please configure TELEGRAM_TOKEN and TELEGRAM_WEBHOOK first");
   process.exit();
 }
 
-console.log(`WEBHOOK: ${WEBHOOK}`);
+console.log(`WEBHOOK: ${TELEGRAM_WEBHOOK}`);
 console.log(`Use trace.moe API: ${TRACE_MOE_KEY ? "with API Key" : "without API Key"}`);
 console.log(`Anilist Info Endpoint: ${ANILIST_API_URL}`);
 
 console.log("Setting Telegram webhook...");
-await fetch(`${TELEGRAM_API}/bot${TELEGRAM_TOKEN}/setWebhook?url=${WEBHOOK}&max_connections=100`)
+await fetch(
+  `${TELEGRAM_API}/bot${TELEGRAM_TOKEN}/setWebhook?url=${TELEGRAM_WEBHOOK}&max_connections=100`,
+)
   .then((e) => e.json())
   .then((e) => {
     console.log(e);
@@ -47,10 +45,7 @@ const app = express();
 
 let REVISION;
 try {
-  REVISION =
-    HEROKU_SLUG_COMMIT ??
-    RAILWAY_GIT_COMMIT_SHA ??
-    child_process.execSync("git rev-parse HEAD").toString().trim();
+  REVISION = HEROKU_SLUG_COMMIT ?? child_process.execSync("git rev-parse HEAD").toString().trim();
 } catch (e) {
   REVISION = "";
 }
