@@ -11,9 +11,9 @@
     "reload": "pm2 reload ecosystem.config.json",
     "delete": "pm2 delete ecosystem.config.json",
     "prettier": "prettier",
-    "format": "prettier --write \"**/*.js\"",
-    "lint": "prettier --check \"**/*.js\"",
-    "test": "prettier --check \"**/*.js\""
+    "format": "prettier --write \"**/*.*\"",
+    "lint": "prettier --check \"**/*.*\"",
+    "test": "prettier --check \"**/*.*\""
   },
   "repository": {
     "type": "git",
