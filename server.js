@@ -9,7 +9,6 @@ const {
   TELEGRAM_TOKEN,
   TELEGRAM_WEBHOOK,
   TRACE_MOE_KEY,
-  ANILIST_API_URL = "https://graphql.anilist.co/",
   HEROKU_SLUG_COMMIT,
 } = process.env;
 
@@ -22,7 +21,6 @@ if (!TELEGRAM_TOKEN || !TELEGRAM_WEBHOOK) {
 
 console.log(`WEBHOOK: ${TELEGRAM_WEBHOOK}`);
 console.log(`Use trace.moe API: ${TRACE_MOE_KEY ? "with" : "without"} API Key`);
-console.log(`Anilist Info Endpoint: ${ANILIST_API_URL}`);
 
 console.log("Setting Telegram webhook...");
 await fetch(
@@ -56,7 +54,6 @@ const getHelpMessage = (botName) =>
     `Bot Name: ${botName ? `@${botName}` : "(unknown)"}`,
     `Revision: \`${REVISION.substring(0, 7)}\``,
     `Use trace.moe with API Key? ${TRACE_MOE_KEY ? "`true`" : "`false`"}`,
-    `Anilist Info Endpoint: ${ANILIST_API_URL}`,
     `Homepage: ${packageJSON?.homepage ?? ""}`,
   ].join("\n");
 
@@ -122,36 +119,6 @@ const formatTime = (timeInSeconds) => {
   return `${hours}:${minutes}:${seconds}`;
 };
 
-const getAnilistInfo = (id) =>
-  new Promise(async (resolve) => {
-    const response = await fetch(ANILIST_API_URL, {
-      method: "POST",
-      body: JSON.stringify({
-        query: `query($id: Int) {
-            Media(id: $id, type: ANIME) {
-              id
-              idMal
-              title {
-                native
-                romaji
-                english
-              }
-              synonyms
-              isAdult
-            }
-          }
-          `,
-        variables: { id },
-      }),
-      headers: { "Content-Type": "application/json" },
-    });
-    if (response.status >= 400) {
-      console.error(1070, response.status, await response.text());
-      return resolve({ text: "`Anilist API error, please try again later.`" });
-    }
-    return resolve((await response.json()).data.Media);
-  });
-
 const submitSearch = (imageFileURL, opts) =>
   new Promise(async (resolve, reject) => {
     let trial = 5;
@@ -160,6 +127,7 @@ const submitSearch = (imageFileURL, opts) =>
       trial--;
       response = await fetch(
         `https://api.trace.moe/search?${[
+          "anilistInfo=1",
           `uid=tg${opts.fromId}`,
           `url=${encodeURIComponent(imageFileURL)}`,
           opts.noCrop ? "" : "cutBorders=1",
@@ -201,8 +169,7 @@ const submitSearch = (imageFileURL, opts) =>
       return resolve({ text: "Cannot find any results from trace.moe" });
     }
     const { anilist, similarity, filename, from, to, video } = searchResult.result[0];
-    const { title: { chinese, english, native, romaji } = {}, isAdult } =
-      await getAnilistInfo(anilist);
+    const { title: { chinese, english, native, romaji } = {}, isAdult } = anilist ?? {};
     let text = "";
     text += [native, chinese, romaji, english]
       .filter((e) => e)
