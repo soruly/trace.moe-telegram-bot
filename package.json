@@ -27,5 +27,8 @@
   "homepage": "https://github.com/soruly/trace.moe-telegram-bot",
   "devDependencies": {
     "prettier": "^3.6.2"
+  },
+  "dependencies": {
+    "postgres": "^3.4.7"
   }
 }

@@ -1,6 +1,7 @@
 import child_process from "node:child_process";
 import fs from "node:fs/promises";
 import http from "node:http";
+import postgres from "postgres";
 
 process.loadEnvFile();
 const {
@@ -10,6 +11,11 @@ const {
   TELEGRAM_WEBHOOK,
   TRACE_MOE_KEY,
   HEROKU_SLUG_COMMIT,
+  DB_HOST,
+  DB_PORT,
+  DB_NAME,
+  DB_USER,
+  DB_PASS,
 } = process.env;
 
 const TELEGRAM_API = "https://api.telegram.org";
@@ -21,6 +27,19 @@ if (!TELEGRAM_TOKEN || !TELEGRAM_WEBHOOK) {
 
 console.log(`WEBHOOK: ${TELEGRAM_WEBHOOK}`);
 console.log(`Use trace.moe API: ${TRACE_MOE_KEY ? "with" : "without"} API Key`);
+console.log(
+  `Logs to database: ${DB_HOST ? `postgres://${DB_USER}:***@${DB_HOST}:${DB_PORT}/${DB_NAME}` : "false"}`,
+);
+
+const sql = DB_HOST
+  ? postgres({
+      host: DB_HOST,
+      port: DB_PORT,
+      database: DB_NAME,
+      username: DB_USER,
+      password: DB_PASS,
+    })
+  : null;
 
 console.log("Setting Telegram webhook...");
 await fetch(
@@ -49,13 +68,18 @@ const packageJSON = (await fs.stat("./package.json").catch(() => null))
   ? JSON.parse(await fs.readFile("./package.json"))
   : null;
 
-const getHelpMessage = (botName) =>
+const getHelpMessage = async (botName, fromId) =>
   [
     `Bot Name: ${botName ? `@${botName}` : "(unknown)"}`,
     `Revision: \`${REVISION.substring(0, 7)}\``,
     `Use trace.moe with API Key? ${TRACE_MOE_KEY ? "`true`" : "`false`"}`,
     `Homepage: ${packageJSON?.homepage ?? ""}`,
-  ].join("\n");
+    sql
+      ? `Your search count (last 30 days): ${(await sql`SELECT COUNT(*) AS count FROM logs_bot WHERE user_id=${fromId} AND code=200 AND created > now() - '30 days'::interval`)[0].count}`
+      : "",
+  ]
+    .filter((e) => e)
+    .join("\n");
 
 const sendMessage = (chat_id, text, options) =>
   fetch(`${TELEGRAM_API}/bot${TELEGRAM_TOKEN}/sendMessage`, {
@@ -119,7 +143,6 @@ const submitSearch = (imageFileURL, opts) =>
       response = await fetch(
         `https://api.trace.moe/search?${[
           "anilistInfo=1",
-          `uid=tg${opts.fromId}`,
           `url=${encodeURIComponent(imageFileURL)}`,
           opts.noCrop ? "" : "cutBorders=1",
         ].join("&")}`,
@@ -132,6 +155,8 @@ const submitSearch = (imageFileURL, opts) =>
         trial = 0;
         return resolve({ text: "`trace.moe API error, please try again later.`" });
       }
+      if (sql)
+        await sql`INSERT INTO logs_bot ${sql({ user_id: opts.fromId, code: response.status })}`;
       if (response.status === 503 || response.status === 402) {
         await new Promise((resolve) =>
           setTimeout(resolve, Math.floor(Math.random() * 4000) + 1000),
@@ -271,7 +296,7 @@ const privateMessageHandler = async (message) => {
   const imageURL = await getImageFromMessage(responding_msg);
   if (!imageURL) {
     if (message.text?.toLowerCase().includes("/help")) {
-      return await sendMessage(message.chat.id, getHelpMessage(botName), {
+      return await sendMessage(message.chat.id, await getHelpMessage(botName, searchOpts.fromId), {
         parse_mode: "Markdown",
       });
     }
@@ -310,7 +335,7 @@ const groupMessageHandler = async (message) => {
   const imageURL = await getImageFromMessage(responding_msg);
   if (!imageURL) {
     if (responding_msg.text?.toLowerCase().includes("/help")) {
-      return await sendMessage(message.chat.id, getHelpMessage(botName), {
+      return await sendMessage(message.chat.id, await getHelpMessage(botName, searchOpts.fromId), {
         reply_to_message_id: message.message_id,
         parse_mode: "Markdown",
       });
