@@ -98,15 +98,6 @@ const sendVideo = (chat_id, video, options) =>
     .then((e) => e.json())
     .then((e) => e.result);
 
-const editMessageText = (text, options) =>
-  fetch(`${TELEGRAM_API}/bot${TELEGRAM_TOKEN}/editMessageText`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ text, ...options }),
-  })
-    .then((e) => e.json())
-    .then((e) => e.result);
-
 const formatTime = (timeInSeconds) => {
   const sec_num = Math.round(Number(timeInSeconds));
   const hours = Math.floor(sec_num / 3600)
