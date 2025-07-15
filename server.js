@@ -262,6 +262,9 @@ const getImageFromMessage = async (message) => {
   return false;
 };
 
+const queue = new Set();
+setInterval(() => queue.clear(), 60 * 60 * 1000); // reset search queue every 60 mins
+
 const privateMessageHandler = async (message) => {
   const searchOpts = getSearchOpts(message);
   const responding_msg = message.reply_to_message ? message.reply_to_message : message;
@@ -274,10 +277,13 @@ const privateMessageHandler = async (message) => {
     }
     return await sendMessage(message.chat.id, "You can Send / Forward anime screenshots to me.");
   }
+  while (queue.has(searchOpts.fromId)) await new Promise((resolve) => setTimeout(resolve, 100));
+  queue.add(searchOpts.fromId);
   setMessageReaction(message.chat.id, message.message_id, ["👌"]);
   const result = await submitSearch(imageURL, searchOpts);
   sendChatAction(message.chat.id, "typing");
   setMessageReaction(message.chat.id, message.message_id, ["👍"]);
+  queue.delete(searchOpts.fromId);
 
   if (result.video && !searchOpts.skip) {
     const videoLink = searchOpts.mute ? `${result.video}&mute` : result.video;
@@ -316,10 +322,13 @@ const groupMessageHandler = async (message) => {
       { reply_to_message_id: message.message_id },
     );
   }
+  while (queue.has(searchOpts.fromId)) await new Promise((resolve) => setTimeout(resolve, 100));
+  queue.add(searchOpts.fromId);
   setMessageReaction(message.chat.id, message.message_id, ["👌"]);
   const result = await submitSearch(imageURL, searchOpts);
   sendChatAction(message.chat.id, "typing");
   setMessageReaction(message.chat.id, message.message_id, ["👍"]);
+  queue.delete(searchOpts.fromId);
 
   if (result.isAdult) {
     await sendMessage(
