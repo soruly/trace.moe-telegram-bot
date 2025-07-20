@@ -171,6 +171,7 @@ const submitSearch = (imageFileURL, opts) =>
       return resolve({ text: "`You exceeded the search limit, please try again later`" });
     }
     if (response.status >= 400) {
+      console.error(await response.text());
       return resolve({ text: "`trace.moe API error, please try again later.`" });
     }
     const searchResult = await response.json();
@@ -274,6 +275,9 @@ const getImageFromMessage = async (message) => {
   }
   if (message.video?.thumb) {
     return await getImageUrlFromPhotoSize(message.video.thumb);
+  }
+  if (message.sticker) {
+    return await getImageUrlFromPhotoSize(message.sticker);
   }
   if (message.document?.thumb) {
     return await getImageUrlFromPhotoSize(message.document.thumb);
