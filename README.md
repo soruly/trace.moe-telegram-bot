@@ -16,7 +16,7 @@ https://user-images.githubusercontent.com/1979746/126060529-8a33523a-967b-48de-9
 
 - Show anime titles in multiple languages
 - Telegram group support
-- Image, GIF, Video, URL support (stickers are not supported)
+- Image, GIF, Video, Stickers, URL support
 - Video preview
 
 ## How to use
