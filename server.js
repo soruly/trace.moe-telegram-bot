@@ -202,10 +202,14 @@ const submitSearch = (imageFileURL, opts) =>
     text += `\`${filename.replace(/`/g, "``")}\`\n`;
     text += `\`${formatTime(from)}\`\n`;
     text += `\`${(similarity * 100).toFixed(1)}% similarity\`\n`;
+    const url = new URL(video);
+    const urlSearchParams = new URLSearchParams(url.search);
+    urlSearchParams.set("size", "l");
+    url.search = urlSearchParams;
     return resolve({
       isAdult,
       text,
-      video: `${video}&size=l`,
+      video: `${url}`,
     });
   });
 
