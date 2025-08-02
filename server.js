@@ -200,7 +200,11 @@ const submitSearch = (imageFileURL, opts) =>
       .join("\n");
     text += "\n";
     text += `\`${filename.replace(/`/g, "``")}\`\n`;
-    text += `\`${formatTime(from)}\`\n`;
+    if (formatTime(from) === formatTime(to)) {
+      text += `\`${formatTime(from)}\`\n`;
+    } else {
+      text += `\`${formatTime(from)}\` - \`${formatTime(to)}\`\n`;
+    }
     text += `\`${(similarity * 100).toFixed(1)}% similarity\`\n`;
     const url = new URL(video);
     const urlSearchParams = new URLSearchParams(url.search);
