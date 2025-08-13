@@ -281,8 +281,9 @@ const getImageFromMessage = async (message) => {
   if (message.animation) {
     return await getImageUrlFromPhotoSize(message.animation);
   }
-  if (message.video?.thumb) {
-    return await getImageUrlFromPhotoSize(message.video.thumb);
+  if (message.video) {
+    if (message.video.file_size <= 307200) return await getImageUrlFromPhotoSize(message.video);
+    if (message.video?.thumb) return await getImageUrlFromPhotoSize(message.video.thumb);
   }
   if (message.sticker) {
     return await getImageUrlFromPhotoSize(message.sticker);
