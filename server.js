@@ -295,14 +295,14 @@ const getImageFromMessage = async (message) => {
     return message.link_preview_options?.url;
   }
   if (message.entities && message.text) {
-    message.entities.forEach((entity) => {
+    for (const entity of message.entities) {
       if (entity.type === "url") {
         return message.text.substring(entity.offset, entity.offset + entity.length);
       }
       if (entity.type === "text_link") {
         return entity.url;
       }
-    });
+    }
   }
   return false;
 };
