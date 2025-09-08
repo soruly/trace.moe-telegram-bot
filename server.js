@@ -291,11 +291,18 @@ const getImageFromMessage = async (message) => {
   if (message.document?.thumb) {
     return await getImageUrlFromPhotoSize(message.document.thumb);
   }
+  if (message.link_preview_options?.url) {
+    return message.link_preview_options?.url;
+  }
   if (message.entities && message.text) {
-    const urlEntity = message.entities.find((entity) => entity.type === "url");
-    return urlEntity
-      ? message.text.substring(urlEntity.offset, urlEntity.offset + urlEntity.length)
-      : false;
+    for (const entity of message.entities) {
+      if (entity.type === "url") {
+        return message.text.substring(entity.offset, entity.offset + entity.length);
+      }
+      if (entity.type === "text_link") {
+        return entity.url;
+      }
+    }
   }
   return false;
 };
