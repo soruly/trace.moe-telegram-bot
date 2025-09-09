@@ -283,6 +283,7 @@ const getImageFromMessage = async (message) => {
   }
   if (message.video) {
     if (message.video.file_size <= 307200) return await getImageUrlFromPhotoSize(message.video);
+    if (message.video?.cover) return await getImageUrlFromPhotoSize(message.video.cover.pop());
     if (message.video?.thumb) return await getImageUrlFromPhotoSize(message.video.thumb);
   }
   if (message.sticker) {
