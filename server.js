@@ -284,13 +284,13 @@ const getImageFromMessage = async (message) => {
   if (message.video) {
     if (message.video.file_size <= 307200) return await getImageUrlFromPhotoSize(message.video);
     if (message.video?.cover) return await getImageUrlFromPhotoSize(message.video.cover.pop());
-    if (message.video?.thumb) return await getImageUrlFromPhotoSize(message.video.thumb);
+    if (message.video?.thumbnail) return await getImageUrlFromPhotoSize(message.video.thumbnail);
   }
   if (message.sticker) {
     return await getImageUrlFromPhotoSize(message.sticker);
   }
-  if (message.document?.thumb) {
-    return await getImageUrlFromPhotoSize(message.document.thumb);
+  if (message.document?.thumbnail) {
+    return await getImageUrlFromPhotoSize(message.document.thumbnail);
   }
   if (message.link_preview_options?.url) {
     return message.link_preview_options?.url;
