@@ -313,7 +313,9 @@ setInterval(() => queue.clear(), 60 * 60 * 1000); // reset search queue every 60
 
 const privateMessageHandler = async (message) => {
   const searchOpts = getSearchOpts(message);
-  const responding_msg = message.reply_to_message ? message.reply_to_message : message;
+  const responding_msg = message.reply_to_message ? message.reply_to_message
+    : message.external_reply ? message.external_reply
+    : message;
   const imageURL = await getImageFromMessage(responding_msg);
   if (!imageURL) {
     if (message.text?.toLowerCase().includes("/help")) {
@@ -352,7 +354,9 @@ const privateMessageHandler = async (message) => {
 
 const groupMessageHandler = async (message) => {
   const searchOpts = getSearchOpts(message);
-  const responding_msg = message.reply_to_message ? message.reply_to_message : message;
+  const responding_msg = message.reply_to_message ? message.reply_to_message
+    : message.external_reply ? message.external_reply
+    : message;
   const imageURL = await getImageFromMessage(responding_msg);
   if (!imageURL) {
     if (responding_msg.text?.toLowerCase().includes("/help")) {
