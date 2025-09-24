@@ -318,6 +318,7 @@ const privateMessageHandler = async (message) => {
     : message.external_reply
       ? message.external_reply
       : message;
+  const reply_msg_id = message.external_reply ? message.message_id : responding_msg.message_id;
   const imageURL = await getImageFromMessage(responding_msg);
   if (!imageURL) {
     if (message.text?.toLowerCase().includes("/help")) {
@@ -342,14 +343,14 @@ const privateMessageHandler = async (message) => {
       await sendVideo(message.chat.id, videoLink, {
         caption: result.text,
         parse_mode: "Markdown",
-        reply_to_message_id: responding_msg.message_id,
+        reply_to_message_id: reply_msg_id,
       });
       return;
     }
   }
 
   await sendMessage(message.chat.id, result.text, {
-    reply_to_message_id: responding_msg.message_id,
+    reply_to_message_id: reply_msg_id,
     parse_mode: "Markdown",
   });
 };
@@ -361,6 +362,7 @@ const groupMessageHandler = async (message) => {
     : message.external_reply
       ? message.external_reply
       : message;
+  const reply_msg_id = message.external_reply ? message.message_id : responding_msg.message_id;
   const imageURL = await getImageFromMessage(responding_msg);
   if (!imageURL) {
     if (responding_msg.text?.toLowerCase().includes("/help")) {
@@ -389,7 +391,7 @@ const groupMessageHandler = async (message) => {
       message.chat.id,
       "I've found an adult result 😳\nPlease forward it to me via Private Chat 😏",
       {
-        reply_to_message_id: responding_msg.message_id,
+        reply_to_message_id: reply_msg_id,
       },
     );
     return;
@@ -403,7 +405,7 @@ const groupMessageHandler = async (message) => {
         caption: result.text,
         has_spoiler: responding_msg.has_media_spoiler,
         parse_mode: "Markdown",
-        reply_to_message_id: responding_msg.message_id,
+        reply_to_message_id: reply_msg_id,
       });
       return;
     }
@@ -411,7 +413,7 @@ const groupMessageHandler = async (message) => {
 
   await sendMessage(message.chat.id, result.text, {
     parse_mode: "Markdown",
-    reply_to_message_id: responding_msg.message_id,
+    reply_to_message_id: reply_msg_id,
   });
 };
 
