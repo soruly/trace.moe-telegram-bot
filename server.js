@@ -365,7 +365,7 @@ const groupMessageHandler = async (message) => {
   const reply_msg_id = message.external_reply ? message.message_id : responding_msg.message_id;
   const imageURL = await getImageFromMessage(responding_msg);
   if (!imageURL) {
-    if (responding_msg.text?.toLowerCase().includes("/help")) {
+    if (message.text?.toLowerCase().includes("/help")) {
       return await sendMessage(message.chat.id, await getHelpMessage(botName, searchOpts.fromId), {
         reply_to_message_id: message.message_id,
         parse_mode: "Markdown",
