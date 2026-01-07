@@ -29,6 +29,6 @@
     "prettier": "^3.7.4"
   },
   "dependencies": {
-    "postgres": "^3.4.7"
+    "postgres": "^3.4.8"
   }
 }
