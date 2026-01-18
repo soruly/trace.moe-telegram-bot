@@ -2,6 +2,15 @@ import child_process from "node:child_process";
 import fs from "node:fs/promises";
 import http from "node:http";
 import postgres from "postgres";
+import type {
+  ExternalReplyInfo,
+  Message,
+  PhotoSize,
+  SendChatActionInput,
+  SendMessageInput,
+  SendVideoInput,
+  SetMessageReactionInput,
+} from "@effect-ak/tg-bot-api";
 
 process.loadEnvFile();
 const {
@@ -34,7 +43,7 @@ console.log(
 const sql = DB_HOST
   ? postgres({
       host: DB_HOST,
-      port: DB_PORT,
+      port: Number(DB_PORT),
       database: DB_NAME,
       username: DB_USER,
       password: DB_PASS,
@@ -65,10 +74,10 @@ try {
   REVISION = "";
 }
 const packageJSON = (await fs.stat("./package.json").catch(() => null))
-  ? JSON.parse(await fs.readFile("./package.json"))
+  ? JSON.parse(await fs.readFile("./package.json", "utf8"))
   : null;
 
-const getHelpMessage = async (botName, fromId) =>
+const getHelpMessage = async (botName: string, fromId: number) =>
   [
     `Bot Name: ${botName ? `@${botName}` : "(unknown)"}`,
     `Revision: \`${REVISION.substring(0, 7)}\``,
@@ -81,60 +90,90 @@ const getHelpMessage = async (botName, fromId) =>
     .filter((e) => e)
     .join("\n");
 
-const sendMessage = (chat_id, text, options) =>
+const escapeMarkdownV2 = (text: string) =>
+  text.replace(/([\_\*\[\]\(\)\~\>\#\+\-\=\|\{\}\.\!])/g, "\\$1");
+
+const sendMessage = (payload: SendMessageInput) =>
   fetch(`${TELEGRAM_API}/bot${TELEGRAM_TOKEN}/sendMessage`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ chat_id, text, ...options }),
+    body: JSON.stringify(payload),
   })
     .then((e) => e.json())
     .then((e) => e.result);
 
-const sendChatAction = (chat_id, action) =>
+const sendChatAction = (payload: SendChatActionInput) =>
   fetch(`${TELEGRAM_API}/bot${TELEGRAM_TOKEN}/sendChatAction`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ chat_id, action }),
+    body: JSON.stringify(payload),
   })
     .then((e) => e.json())
     .then((e) => e.result);
 
-const setMessageReaction = (chat_id, message_id, emoji_list, is_big) =>
+const setMessageReaction = (payload: SetMessageReactionInput) =>
   fetch(`${TELEGRAM_API}/bot${TELEGRAM_TOKEN}/setMessageReaction`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      chat_id,
-      message_id,
-      reaction: emoji_list.map((emoji) => ({ type: "emoji", emoji })),
-      is_big,
-    }),
+    body: JSON.stringify(payload),
   })
     .then((e) => e.json())
     .then((e) => e.result);
 
-const sendVideo = (chat_id, video, options) =>
+const sendVideo = (payload: SendVideoInput) =>
   fetch(`${TELEGRAM_API}/bot${TELEGRAM_TOKEN}/sendVideo`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ chat_id, video, ...options }),
+    body: JSON.stringify(payload),
   })
     .then((e) => e.json())
     .then((e) => e.result);
 
-const formatTime = (timeInSeconds) => {
-  const sec_num = Math.round(Number(timeInSeconds));
-  const hours = Math.floor(sec_num / 3600)
-    .toString()
-    .padStart(2, "0");
-  const minutes = Math.floor((sec_num - hours * 3600) / 60)
-    .toString()
-    .padStart(2, "0");
-  const seconds = (sec_num - hours * 3600 - minutes * 60).toFixed(0).padStart(2, "0");
-  return `${hours}:${minutes}:${seconds}`;
+const formatTime = (duration: number) => {
+  const hours = Math.floor(duration / 3600);
+  const minutes = Math.floor((duration - hours * 3600) / 60);
+  const seconds = Math.floor(duration - hours * 3600 - minutes * 60);
+  return [hours, minutes, seconds].map((t) => t.toString().padStart(2, "0")).join(":");
 };
 
-const submitSearch = (imageFileURL, opts) =>
+interface AnilistTitle {
+  native: string;
+  romaji: string;
+  english: string;
+  chinese: string;
+}
+interface AnilistInfo {
+  id: number;
+  idMal: number;
+  title: AnilistTitle;
+  synonyms: string[];
+  isAdult: boolean;
+}
+
+interface APISearchResult {
+  anilist: AnilistInfo;
+  filename: string;
+  episode: any;
+  duration: number;
+  from: number;
+  to: number;
+  at: number;
+  similarity: number;
+  video: string;
+  image: string;
+}
+
+interface SearchResult {
+  isAdult?: boolean;
+  text: string;
+  video?: string;
+}
+
+const submitSearch = (
+  imageFileURL: string,
+  userId: number,
+  opts: SearchOptions,
+): Promise<SearchResult> =>
   new Promise(async (resolve, reject) => {
     let trial = 5;
     let response = null;
@@ -155,13 +194,15 @@ const submitSearch = (imageFileURL, opts) =>
         trial = 0;
         return resolve({ text: "`trace.moe API error, please try again later.`" });
       }
-      if (sql)
-        await sql`INSERT INTO logs_bot ${sql({ user_id: opts.fromId, code: response.status })}`;
+      if (sql) await sql`INSERT INTO logs_bot ${sql({ user_id: userId, code: response.status })}`;
       if (response.status === 503 || response.status === 402) {
         await new Promise((resolve) =>
           setTimeout(resolve, Math.floor(Math.random() * 4000) + 1000),
         );
       } else trial = 0;
+    }
+    if (!response) {
+      return resolve({ text: "`trace.moe API error, please try again later.`" });
     }
 
     if ([502, 503, 504].includes(response.status)) {
@@ -185,17 +226,13 @@ const submitSearch = (imageFileURL, opts) =>
     if (searchResult?.result?.length <= 0) {
       return resolve({ text: "Cannot find any results from trace.moe" });
     }
-    const { anilist, similarity, filename, from, to, video } = searchResult.result[0];
+    const { anilist, similarity, filename, from, to, video }: APISearchResult =
+      searchResult.result[0];
     const { title: { chinese, english, native, romaji } = {}, isAdult } = anilist ?? {};
     let text = "";
-    text += [native, chinese, romaji, english]
-      .filter((e) => e)
-      .reduce(
-        // deduplicate titles
-        (acc, cur) =>
-          acc.map((e) => e.toLowerCase()).includes(cur.toLowerCase()) ? acc : [...acc, cur],
-        [],
-      )
+    text += Array.from(
+      new Set([native ?? "", chinese ?? "", romaji ?? "", english ?? ""].filter((e) => e)),
+    )
       .map((t) => `\`${t}\``)
       .join("\n");
     text += "\n";
@@ -209,22 +246,24 @@ const submitSearch = (imageFileURL, opts) =>
     const url = new URL(video);
     const urlSearchParams = new URLSearchParams(url.search);
     urlSearchParams.set("size", "l");
-    url.search = urlSearchParams;
+    url.search = urlSearchParams.toString();
     return resolve({
       isAdult,
       text,
-      video: `${url}`,
+      video: url.toString(),
     });
   });
 
-const messageIsMentioningBot = (message) => {
+const messageIsMentioningBot = (message: Message) => {
   if (message.entities) {
-    return (
-      message.entities
-        .filter((entity) => entity.type === "mention")
-        .map((entity) => message.text.substr(entity.offset, entity.length))
-        .filter((entity) => entity.toLowerCase() === `@${botName.toLowerCase()}`).length >= 1
-    );
+    return message.entities
+      .filter((entity) => entity.type === "mention")
+      .some(
+        (entity) =>
+          message.text
+            .substring(entity.offset, entity.offset + entity.length)
+            .toLocaleLowerCase() === `@${botName.toLowerCase()}`,
+      );
   }
   if (message.caption) {
     // Telegram does not provide entities when mentioning the bot in photo caption
@@ -233,12 +272,17 @@ const messageIsMentioningBot = (message) => {
   return false;
 };
 
-const getSearchOpts = (message) => {
+interface SearchOptions {
+  mute: boolean;
+  noCrop: boolean;
+  skip: boolean;
+}
+
+const getSearchOpts = (message: Message): SearchOptions => {
   const opts = {
     mute: false,
     noCrop: false,
     skip: false,
-    fromId: message.from.id,
   };
   if (messageIsMute(message)) opts.mute = true;
   if (messageIsNoCrop(message)) opts.noCrop = true;
@@ -246,26 +290,26 @@ const getSearchOpts = (message) => {
   return opts;
 };
 
-const messageIsMute = (message) => {
+const messageIsMute = (message: Message) => {
   if (message.caption) return message.caption.toLowerCase().includes("mute");
   return message.text?.toLowerCase().includes("mute");
 };
 
-const messageIsNoCrop = (message) => {
+const messageIsNoCrop = (message: Message) => {
   if (message.caption) return message.caption.toLowerCase().includes("nocrop");
   return message.text?.toLowerCase().includes("nocrop");
 };
 
-const messageIsSkipPreview = (message) => {
+const messageIsSkipPreview = (message: Message) => {
   if (message.caption) return message.caption.toLowerCase().includes("skip");
   return message.text?.toLowerCase().includes("skip");
 };
 
 // https://core.telegram.org/bots/api#photosize
-const getImageUrlFromPhotoSize = async (PhotoSize) => {
-  if (PhotoSize?.file_id) {
+const getImageUrlFromPhotoSize = async (photoSize: PhotoSize) => {
+  if (photoSize?.file_id) {
     const json = await fetch(
-      `${TELEGRAM_API}/bot${TELEGRAM_TOKEN}/getFile?file_id=${PhotoSize.file_id}`,
+      `${TELEGRAM_API}/bot${TELEGRAM_TOKEN}/getFile?file_id=${photoSize.file_id}`,
     ).then((res) => res.json());
     return json?.result?.file_path
       ? `${TELEGRAM_API}/file/bot${TELEGRAM_TOKEN}/${json.result.file_path}`
@@ -274,7 +318,7 @@ const getImageUrlFromPhotoSize = async (PhotoSize) => {
   return false;
 };
 
-const getImageFromMessage = async (message) => {
+const getImageFromMessage = async (message: Message | ExternalReplyInfo) => {
   if (message.photo) {
     return await getImageUrlFromPhotoSize(message.photo.pop()); // get the last (largest) photo
   }
@@ -282,7 +326,7 @@ const getImageFromMessage = async (message) => {
     return await getImageUrlFromPhotoSize(message.animation);
   }
   if (message.video) {
-    if (message.video.file_size <= 307200) return await getImageUrlFromPhotoSize(message.video);
+    if (message.video?.file_size <= 307200) return await getImageUrlFromPhotoSize(message.video);
     if (message.video?.cover) return await getImageUrlFromPhotoSize(message.video.cover.pop());
     if (message.video?.thumbnail) return await getImageUrlFromPhotoSize(message.video.thumbnail);
   }
@@ -295,7 +339,7 @@ const getImageFromMessage = async (message) => {
   if (message.link_preview_options?.url) {
     return message.link_preview_options?.url;
   }
-  if (message.entities && message.text) {
+  if ("entities" in message && message.entities && message.text) {
     for (const entity of message.entities) {
       if (entity.type === "url") {
         return message.text.substring(entity.offset, entity.offset + entity.length);
@@ -311,7 +355,8 @@ const getImageFromMessage = async (message) => {
 const queue = new Set();
 setInterval(() => queue.clear(), 60 * 60 * 1000); // reset search queue every 60 mins
 
-const privateMessageHandler = async (message) => {
+const privateMessageHandler = async (message: Message) => {
+  const userId = message.from?.id ?? 0;
   const searchOpts = getSearchOpts(message);
   const responding_msg = message.reply_to_message
     ? message.reply_to_message
@@ -322,40 +367,60 @@ const privateMessageHandler = async (message) => {
   const imageURL = await getImageFromMessage(responding_msg);
   if (!imageURL) {
     if (message.text?.toLowerCase().includes("/help")) {
-      return await sendMessage(message.chat.id, await getHelpMessage(botName, searchOpts.fromId), {
-        parse_mode: "Markdown",
+      return await sendMessage({
+        chat_id: message.chat.id,
+        text: escapeMarkdownV2(await getHelpMessage(botName, userId)),
+        parse_mode: "MarkdownV2",
       });
     }
-    return await sendMessage(message.chat.id, "You can Send / Forward anime screenshots to me.");
+    return await sendMessage({
+      chat_id: message.chat.id,
+      text: "You can Send or Forward anime screenshots to me",
+    });
   }
-  while (queue.has(searchOpts.fromId)) await new Promise((resolve) => setTimeout(resolve, 100));
-  queue.add(searchOpts.fromId);
-  setMessageReaction(message.chat.id, message.message_id, ["👌"]);
-  const result = await submitSearch(imageURL, searchOpts);
-  sendChatAction(message.chat.id, "typing");
-  setMessageReaction(message.chat.id, message.message_id, ["👍"]);
-  queue.delete(searchOpts.fromId);
+  while (queue.has(userId)) await new Promise((resolve) => setTimeout(resolve, 100));
+  queue.add(userId);
+  setMessageReaction({
+    chat_id: message.chat.id,
+    message_id: message.message_id,
+    reaction: [{ type: "emoji", emoji: "👌" }],
+  });
+  const result = await submitSearch(imageURL, userId, searchOpts);
+  sendChatAction({ chat_id: message.chat.id, action: "typing" });
+  setMessageReaction({
+    chat_id: message.chat.id,
+    message_id: message.message_id,
+    reaction: [{ type: "emoji", emoji: "👍" }],
+  });
+  queue.delete(userId);
 
   if (result.video && !searchOpts.skip) {
     const videoLink = searchOpts.mute ? `${result.video}&mute` : result.video;
     const video = await fetch(videoLink, { method: "HEAD" });
-    if (video.ok && video.headers.get("content-length") > 0) {
-      await sendVideo(message.chat.id, videoLink, {
-        caption: result.text,
-        parse_mode: "Markdown",
-        reply_to_message_id: reply_msg_id,
+    if (video.ok && Number(video.headers.get("content-length")) > 0) {
+      await sendVideo({
+        chat_id: message.chat.id,
+        video: videoLink,
+        caption: escapeMarkdownV2(result.text),
+        parse_mode: "MarkdownV2",
+        reply_parameters: {
+          message_id: reply_msg_id,
+        },
       });
       return;
     }
   }
 
-  await sendMessage(message.chat.id, result.text, {
-    reply_to_message_id: reply_msg_id,
-    parse_mode: "Markdown",
+  await sendMessage({
+    chat_id: message.chat.id,
+    text: escapeMarkdownV2(result.text),
+    parse_mode: "MarkdownV2",
+    reply_parameters: { message_id: reply_msg_id },
   });
 };
 
-const groupMessageHandler = async (message) => {
+const groupMessageHandler = async (message: Message) => {
+  const userId = message.from?.id ?? 0;
   const searchOpts = getSearchOpts(message);
   const responding_msg = message.reply_to_message
     ? message.reply_to_message
@@ -366,60 +431,74 @@ const groupMessageHandler = async (message) => {
   const imageURL = await getImageFromMessage(responding_msg);
   if (!imageURL) {
     if (message.text?.toLowerCase().includes("/help")) {
-      return await sendMessage(message.chat.id, await getHelpMessage(botName, searchOpts.fromId), {
-        reply_to_message_id: message.message_id,
-        parse_mode: "Markdown",
+      return await sendMessage({
+        chat_id: message.chat.id,
+        text: escapeMarkdownV2(await getHelpMessage(botName, userId)),
+        parse_mode: "MarkdownV2",
+        reply_parameters: { message_id: message.message_id },
       });
     }
     // cannot find image from the message mentioning the bot
-    return await sendMessage(
-      message.chat.id,
-      "Mention me in an anime screenshot, I will tell you what anime is that",
-      { reply_to_message_id: message.message_id },
-    );
+    return await sendMessage({
+      chat_id: message.chat.id,
+      text: "Mention me in an anime screenshot, I will tell you what anime is that",
+      reply_parameters: { message_id: message.message_id },
+    });
   }
-  while (queue.has(searchOpts.fromId)) await new Promise((resolve) => setTimeout(resolve, 100));
-  queue.add(searchOpts.fromId);
-  setMessageReaction(message.chat.id, message.message_id, ["👌"]);
-  const result = await submitSearch(imageURL, searchOpts);
-  sendChatAction(message.chat.id, "typing");
-  setMessageReaction(message.chat.id, message.message_id, ["👍"]);
-  queue.delete(searchOpts.fromId);
+  while (queue.has(userId)) await new Promise((resolve) => setTimeout(resolve, 100));
+  queue.add(userId);
+  setMessageReaction({
+    chat_id: message.chat.id,
+    message_id: message.message_id,
+    reaction: [{ type: "emoji", emoji: "👌" }],
+  });
+  const result = await submitSearch(imageURL, userId, searchOpts);
+  sendChatAction({ chat_id: message.chat.id, action: "typing" });
+  setMessageReaction({
+    chat_id: message.chat.id,
+    message_id: message.message_id,
+    reaction: [{ type: "emoji", emoji: "👍" }],
+  });
+  queue.delete(userId);
 
   if (result.isAdult) {
-    await sendMessage(
-      message.chat.id,
-      "I've found an adult result 😳\nPlease forward it to me via Private Chat 😏",
-      {
-        reply_to_message_id: reply_msg_id,
-      },
-    );
+    await sendMessage({
+      chat_id: message.chat.id,
+      text: "I've found an adult result 😳\nPlease forward it to me via Private Chat 😏",
+      reply_parameters: { message_id: reply_msg_id },
+    });
     return;
   }
 
   if (result.video && !searchOpts.skip) {
     const videoLink = searchOpts.mute ? `${result.video}&mute` : result.video;
     const video = await fetch(videoLink, { method: "HEAD" });
-    if (video.ok && video.headers.get("content-length") > 0) {
-      await sendVideo(message.chat.id, videoLink, {
-        caption: result.text,
+    if (video.ok && Number(video.headers.get("content-length")) > 0) {
+      await sendVideo({
+        chat_id: message.chat.id,
+        video: videoLink,
+        caption: escapeMarkdownV2(result.text),
         has_spoiler: responding_msg.has_media_spoiler,
-        parse_mode: "Markdown",
-        reply_to_message_id: reply_msg_id,
+        parse_mode: "MarkdownV2",
+        reply_parameters: {
+          message_id: reply_msg_id,
+        },
       });
       return;
     }
   }
 
-  await sendMessage(message.chat.id, result.text, {
-    parse_mode: "Markdown",
-    reply_to_message_id: reply_msg_id,
+  await sendMessage({
+    chat_id: message.chat.id,
+    text: escapeMarkdownV2(result.text),
+    parse_mode: "MarkdownV2",
+    reply_parameters: { message_id: reply_msg_id },
   });
 };
 
-const getBody = (req) =>
+const getBody = (req: http.IncomingMessage): Promise<string> =>
   new Promise((resolve, reject) => {
-    const chunks = [];
+    const chunks: any[] = [];
     req.on("error", (error) => {
       console.log(error);
       reject(error);
@@ -428,21 +507,30 @@ const getBody = (req) =>
       chunks.push(chunk);
     });
     req.on("end", () => {
-      resolve(Buffer.concat(chunks));
+      resolve(Buffer.concat(chunks).toString());
     });
   });
 
 const server = http.createServer({ keepAliveTimeout: 60000 }, async (req, res) => {
   if (req.method === "POST") {
     try {
-      const { message } = JSON.parse(await getBody(req));
+      const request = JSON.parse(await getBody(req));
+      const message: Message = request.message ?? request.edited_message;
       if (message?.chat?.type === "private") {
         await privateMessageHandler(message);
-        setMessageReaction(message.chat.id, message.message_id, []);
+        setMessageReaction({
+          chat_id: message.chat.id,
+          message_id: message.message_id,
+          reaction: [],
+        });
       } else if (message?.chat?.type === "group" || message?.chat?.type === "supergroup") {
         if (messageIsMentioningBot(message)) {
           await groupMessageHandler(message);
-          setMessageReaction(message.chat.id, message.message_id, []);
+          setMessageReaction({
+            chat_id: message.chat.id,
+            message_id: message.message_id,
+            reaction: [],
+          });
         }
       }
       return res.writeHead(204).end();
@@ -461,4 +549,4 @@ const server = http.createServer({ keepAliveTimeout: 60000 }, async (req, res) =
 
 server.on("error", (e) => console.error(e));
 
-server.listen(PORT, ADDR, () => console.log("server listening on", server.address()));
+server.listen(Number(PORT), ADDR, () => console.log("server listening on", server.address()));

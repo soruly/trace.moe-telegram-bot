@@ -2,11 +2,9 @@
   "apps": [
     {
       "name": "trace.moe-telegram-bot",
-      "script": "server.js",
-      "node_args": "--dns-result-order=ipv6first",
-      "instances": 1,
-      "autorestart": true,
-      "exec_mode": "fork"
+      "interpreter": "node",
+      "script": "server.ts",
+      "node_args": "--dns-result-order=ipv6first"
     }
   ]
 }
