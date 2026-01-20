@@ -137,10 +137,10 @@ const formatTime = (duration: number) => {
 };
 
 interface AnilistTitle {
-  native: string;
-  romaji: string;
-  english: string;
-  chinese: string;
+  native: string | null;
+  romaji: string | null;
+  english: string | null;
+  chinese: string | null;
 }
 interface AnilistInfo {
   id: number;
