@@ -28,7 +28,7 @@
   "devDependencies": {
     "@effect-ak/tg-bot-api": "^1.0.0",
     "@types/node": "^25.0.9",
-    "prettier": "^3.8.0"
+    "prettier": "^3.8.1"
   },
   "dependencies": {
     "postgres": "^3.4.8"
