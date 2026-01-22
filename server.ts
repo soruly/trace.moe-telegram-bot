@@ -137,10 +137,10 @@ const formatTime = (duration: number) => {
 };
 
 interface AnilistTitle {
-  native: string;
-  romaji: string;
-  english: string;
-  chinese: string;
+  native: string | null;
+  romaji: string | null;
+  english: string | null;
+  chinese: string | null;
 }
 interface AnilistInfo {
   id: number;
@@ -230,11 +230,13 @@ const submitSearch = (
       searchResult.result[0];
     const { title: { chinese, english, native, romaji } = {}, isAdult } = anilist ?? {};
     let text = "";
-    text += Array.from(
-      new Set([native ?? "", chinese ?? "", romaji ?? "", english ?? ""].filter((e) => e)),
-    )
-      .map((t) => `\`${t}\``)
-      .join("\n");
+    const titles: string[] = [];
+    if (native) titles.push(native);
+    if (chinese && !titles.includes(chinese)) titles.push(chinese);
+    if (romaji && !titles.includes(romaji)) titles.push(romaji);
+    if (english && !titles.includes(english)) titles.push(english);
+
+    text += titles.map((t) => `\`${t}\``).join("\n");
     text += "\n";
     text += `\`${filename.replace(/`/g, "``")}\`\n`;
     if (formatTime(from) === formatTime(to)) {
