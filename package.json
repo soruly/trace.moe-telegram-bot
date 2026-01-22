@@ -27,7 +27,7 @@
   "homepage": "https://github.com/soruly/trace.moe-telegram-bot",
   "devDependencies": {
     "@effect-ak/tg-bot-api": "^1.0.0",
-    "@types/node": "^25.0.9",
+    "@types/node": "^25.0.10",
     "prettier": "^3.8.1"
   },
   "dependencies": {
