@@ -382,19 +382,23 @@ const privateMessageHandler = async (message: Message) => {
   }
   while (queue.has(userId)) await new Promise((resolve) => setTimeout(resolve, 100));
   queue.add(userId);
-  setMessageReaction({
-    chat_id: message.chat.id,
-    message_id: message.message_id,
-    reaction: [{ type: "emoji", emoji: "👌" }],
-  });
-  const result = await submitSearch(imageURL, userId, searchOpts);
-  sendChatAction({ chat_id: message.chat.id, action: "typing" });
-  setMessageReaction({
-    chat_id: message.chat.id,
-    message_id: message.message_id,
-    reaction: [{ type: "emoji", emoji: "👍" }],
-  });
-  queue.delete(userId);
+  let result;
+  try {
+    setMessageReaction({
+      chat_id: message.chat.id,
+      message_id: message.message_id,
+      reaction: [{ type: "emoji", emoji: "👌" }],
+    });
+    result = await submitSearch(imageURL, userId, searchOpts);
+    sendChatAction({ chat_id: message.chat.id, action: "typing" });
+    setMessageReaction({
+      chat_id: message.chat.id,
+      message_id: message.message_id,
+      reaction: [{ type: "emoji", emoji: "👍" }],
+    });
+  } finally {
+    queue.delete(userId);
+  }
 
   if (result.video && !searchOpts.skip) {
     const videoLink = searchOpts.mute ? `${result.video}&mute` : result.video;
@@ -449,19 +453,23 @@ const groupMessageHandler = async (message: Message) => {
   }
   while (queue.has(userId)) await new Promise((resolve) => setTimeout(resolve, 100));
   queue.add(userId);
-  setMessageReaction({
-    chat_id: message.chat.id,
-    message_id: message.message_id,
-    reaction: [{ type: "emoji", emoji: "👌" }],
-  });
-  const result = await submitSearch(imageURL, userId, searchOpts);
-  sendChatAction({ chat_id: message.chat.id, action: "typing" });
-  setMessageReaction({
-    chat_id: message.chat.id,
-    message_id: message.message_id,
-    reaction: [{ type: "emoji", emoji: "👍" }],
-  });
-  queue.delete(userId);
+  let result;
+  try {
+    setMessageReaction({
+      chat_id: message.chat.id,
+      message_id: message.message_id,
+      reaction: [{ type: "emoji", emoji: "👌" }],
+    });
+    result = await submitSearch(imageURL, userId, searchOpts);
+    sendChatAction({ chat_id: message.chat.id, action: "typing" });
+    setMessageReaction({
+      chat_id: message.chat.id,
+      message_id: message.message_id,
+      reaction: [{ type: "emoji", emoji: "👍" }],
+    });
+  } finally {
+    queue.delete(userId);
+  }
 
   if (result.isAdult) {
     await sendMessage({
