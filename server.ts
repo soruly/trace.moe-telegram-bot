@@ -281,30 +281,13 @@ interface SearchOptions {
 }
 
 const getSearchOpts = (message: Message): SearchOptions => {
-  const opts = {
-    mute: false,
-    noCrop: false,
-    skip: false,
+  const text = message.text?.toLowerCase() ?? "";
+  const caption = message.caption?.toLowerCase() ?? "";
+  return {
+    mute: text.includes("mute") || caption.includes("mute"),
+    noCrop: text.includes("nocrop") || caption.includes("nocrop"),
+    skip: text.includes("skip") || caption.includes("skip"),
   };
-  if (messageIsMute(message)) opts.mute = true;
-  if (messageIsNoCrop(message)) opts.noCrop = true;
-  if (messageIsSkipPreview(message)) opts.skip = true;
-  return opts;
-};
-
-const messageIsMute = (message: Message) => {
-  if (message.caption) return message.caption.toLowerCase().includes("mute");
-  return message.text?.toLowerCase().includes("mute");
-};
-
-const messageIsNoCrop = (message: Message) => {
-  if (message.caption) return message.caption.toLowerCase().includes("nocrop");
-  return message.text?.toLowerCase().includes("nocrop");
-};
-
-const messageIsSkipPreview = (message: Message) => {
-  if (message.caption) return message.caption.toLowerCase().includes("skip");
-  return message.text?.toLowerCase().includes("skip");
 };
 
 // https://core.telegram.org/bots/api#photosize
