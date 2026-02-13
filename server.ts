@@ -337,8 +337,18 @@ const getImageFromMessage = async (message: Message | ExternalReplyInfo) => {
   return false;
 };
 
-const queue = new Set();
-setInterval(() => queue.clear(), 60 * 60 * 1000); // reset search queue every 60 mins
+const queue = new Map<number, Promise<any>>();
+
+const enqueueUserTask = async <T>(userId: number, task: () => Promise<T>): Promise<T> => {
+  const previous = queue.get(userId) || Promise.resolve();
+  const current = previous.catch(() => {}).then(task);
+
+  const storedPromise = current.finally(() => {
+    if (queue.get(userId) === storedPromise) queue.delete(userId);
+  });
+  queue.set(userId, storedPromise);
+  return current;
+};
 
 const privateMessageHandler = async (message: Message) => {
   const userId = message.from?.id ?? 0;
@@ -363,25 +373,22 @@ const privateMessageHandler = async (message: Message) => {
       text: "You can Send or Forward anime screenshots to me",
     });
   }
-  while (queue.has(userId)) await new Promise((resolve) => setTimeout(resolve, 100));
-  queue.add(userId);
-  let result;
-  try {
+
+  const result = await enqueueUserTask(userId, async () => {
     setMessageReaction({
       chat_id: message.chat.id,
       message_id: message.message_id,
       reaction: [{ type: "emoji", emoji: "👌" }],
     });
-    result = await submitSearch(imageURL, userId, searchOpts);
+    const result = await submitSearch(imageURL, userId, searchOpts);
     sendChatAction({ chat_id: message.chat.id, action: "typing" });
     setMessageReaction({
       chat_id: message.chat.id,
       message_id: message.message_id,
       reaction: [{ type: "emoji", emoji: "👍" }],
     });
-  } finally {
-    queue.delete(userId);
-  }
+    return result;
+  });
 
   if (result.video && !searchOpts.skip) {
     const videoLink = searchOpts.mute ? `${result.video}&mute` : result.video;
@@ -434,25 +441,22 @@ const groupMessageHandler = async (message: Message) => {
       reply_parameters: { message_id: message.message_id },
     });
   }
-  while (queue.has(userId)) await new Promise((resolve) => setTimeout(resolve, 100));
-  queue.add(userId);
-  let result;
-  try {
+
+  const result = await enqueueUserTask(userId, async () => {
     setMessageReaction({
       chat_id: message.chat.id,
       message_id: message.message_id,
       reaction: [{ type: "emoji", emoji: "👌" }],
     });
-    result = await submitSearch(imageURL, userId, searchOpts);
+    const result = await submitSearch(imageURL, userId, searchOpts);
     sendChatAction({ chat_id: message.chat.id, action: "typing" });
     setMessageReaction({
       chat_id: message.chat.id,
       message_id: message.message_id,
       reaction: [{ type: "emoji", emoji: "👍" }],
     });
-  } finally {
-    queue.delete(userId);
-  }
+    return result;
+  });
 
   if (result.isAdult) {
     await sendMessage({
