@@ -544,7 +544,14 @@ const server = http.createServer({ keepAliveTimeout: 60000 }, async (req, res) =
   }
   if (req.method === "GET") {
     return res
-      .writeHead(200, { "Content-Type": "text/html" })
+      .writeHead(200, {
+        "Content-Type": "text/html",
+        "Content-Security-Policy": "default-src 'none'; frame-ancestors 'none'",
+        "Cross-Origin-Resource-Policy": "same-origin",
+        "Referrer-Policy": "no-referrer",
+        "Strict-Transport-Security": "max-age=31536000; includeSubDomains; preload",
+        "X-Content-Type-Options": "nosniff",
+      })
       .end(`<meta http-equiv="Refresh" content="0; URL=https://t.me/${botName ?? ""}">`);
   }
   return res.writeHead(400).end();
