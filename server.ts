@@ -496,11 +496,17 @@ const groupMessageHandler = async (message: Message) => {
 const getBody = (req: http.IncomingMessage): Promise<string> =>
   new Promise((resolve, reject) => {
     const chunks: any[] = [];
+    let size = 0;
     req.on("error", (error) => {
       console.log(error);
       reject(error);
     });
     req.on("data", (chunk) => {
+      size += chunk.length;
+      if (size > 1024 * 1024) {
+        req.destroy();
+        return reject(new Error("Request entity too large"));
+      }
       chunks.push(chunk);
     });
     req.on("end", () => {
