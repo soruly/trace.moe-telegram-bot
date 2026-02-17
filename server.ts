@@ -1,7 +1,7 @@
 import child_process from "node:child_process";
-import fs from "node:fs/promises";
 import http from "node:http";
 import postgres from "postgres";
+import packageConfig from "./package.json" with { type: "json" };
 import type {
   ExternalReplyInfo,
   Message,
@@ -73,16 +73,13 @@ try {
 } catch (e) {
   REVISION = "";
 }
-const packageJSON = (await fs.stat("./package.json").catch(() => null))
-  ? JSON.parse(await fs.readFile("./package.json", "utf8"))
-  : null;
 
 const getHelpMessage = async (botName: string, fromId: number) =>
   [
     `Bot Name: ${botName ? `@${botName}` : "(unknown)"}`,
     `Revision: \`${REVISION.substring(0, 7)}\``,
     `Use trace.moe with API Key? ${TRACE_MOE_KEY ? "`true`" : "`false`"}`,
-    `Homepage: ${packageJSON?.homepage ?? ""}`,
+    `Homepage: ${packageConfig.homepage ?? ""}`,
     sql
       ? `Your search count (last 30 days): ${(await sql`SELECT COUNT(*) AS count FROM logs_bot WHERE user_id=${fromId} AND code=200 AND created > now() - '30 days'::interval`)[0].count}`
       : "",
