@@ -257,16 +257,20 @@ const messageIsMentioningBot = (message: Message) => {
   if (message.entities) {
     return message.entities
       .filter((entity) => entity.type === "mention")
-      .some(
-        (entity) =>
-          message.text
-            .substring(entity.offset, entity.offset + entity.length)
-            .toLocaleLowerCase() === `@${botName.toLowerCase()}`,
+      .some((entity) =>
+        message.text
+          .substring(entity.offset, entity.offset + entity.length)
+          .match(new RegExp(`^@${botName}$`, "i")),
       );
   }
-  if (message.caption) {
-    // Telegram does not provide entities when mentioning the bot in photo caption
-    return message.caption.toLowerCase().indexOf(`@${botName.toLowerCase()}`) >= 0;
+  if (message.caption_entities) {
+    return message.caption_entities
+      .filter((entity) => entity.type === "mention")
+      .some((entity) =>
+        message.caption
+          .substring(entity.offset, entity.offset + entity.length)
+          .match(new RegExp(`^@${botName}$`, "i")),
+      );
   }
   return false;
 };
