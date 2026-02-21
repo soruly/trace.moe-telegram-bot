@@ -1,6 +1,6 @@
 import child_process from "node:child_process";
 import http from "node:http";
-import postgres from "postgres";
+import sqlite from "node:sqlite";
 import packageConfig from "./package.json" with { type: "json" };
 import type {
   ExternalReplyInfo,
@@ -19,11 +19,6 @@ const {
   TELEGRAM_TOKEN,
   TELEGRAM_WEBHOOK,
   TRACE_MOE_KEY,
-  DB_HOST,
-  DB_PORT,
-  DB_NAME,
-  DB_USER,
-  DB_PASS,
 } = process.env;
 
 const TELEGRAM_API = "https://api.telegram.org";
@@ -35,19 +30,25 @@ if (!TELEGRAM_TOKEN || !TELEGRAM_WEBHOOK) {
 
 console.log(`WEBHOOK: ${TELEGRAM_WEBHOOK}`);
 console.log(`Use trace.moe API: ${TRACE_MOE_KEY ? "with" : "without"} API Key`);
-console.log(
-  `Logs to database: ${DB_HOST ? `postgres://${DB_USER}:***@${DB_HOST}:${DB_PORT}/${DB_NAME}` : "false"}`,
-);
 
-const sql = DB_HOST
-  ? postgres({
-      host: DB_HOST,
-      port: Number(DB_PORT),
-      database: DB_NAME,
-      username: DB_USER,
-      password: DB_PASS,
-    })
-  : null;
+const database = new sqlite.DatabaseSync(".db");
+
+database.exec(`
+CREATE TABLE IF NOT EXISTS logs (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  created TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  user_id INTEGER NOT NULL,
+  code INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_logs_created ON logs (created);
+CREATE INDEX IF NOT EXISTS idx_logs_user_id  ON logs (user_id);
+CREATE INDEX IF NOT EXISTS idx_logs_code ON logs (code);
+CREATE INDEX IF NOT EXISTS idx_logs_created_user_id_code ON logs (created, user_id, code);
+`);
+const select = database.prepare(
+  "SELECT COUNT(*) AS count FROM logs WHERE user_id = $user_id AND code = 200 AND created > datetime('now', '-30 days')",
+);
+const insert = database.prepare("INSERT INTO logs (user_id, code) VALUES ($user_id, $code)");
 
 console.log("Setting Telegram webhook...");
 await fetch(
@@ -79,9 +80,7 @@ const getHelpMessage = async (botName: string, fromId: number) =>
     `Revision: \`${REVISION.substring(0, 7)}\``,
     `Use trace.moe with API Key? ${TRACE_MOE_KEY ? "`true`" : "`false`"}`,
     `Homepage: ${packageConfig.homepage ?? ""}`,
-    sql
-      ? `Your search count (last 30 days): ${(await sql`SELECT COUNT(*) AS count FROM logs_bot WHERE user_id=${fromId} AND code=200 AND created > now() - '30 days'::interval`)[0].count}`
-      : "",
+    `Your search count (last 30 days): ${select.get({ $user_id: fromId }).count}`,
   ]
     .filter((e) => e)
     .join("\n");
@@ -190,7 +189,7 @@ const submitSearch = (
         trial = 0;
         return resolve({ text: "`trace.moe API error, please try again later.`" });
       }
-      if (sql) await sql`INSERT INTO logs_bot ${sql({ user_id: userId, code: response.status })}`;
+      insert.run({ $user_id: userId, $code: response.status });
       if (response.status === 503 || response.status === 402) {
         await new Promise((resolve) =>
           setTimeout(resolve, Math.floor(Math.random() * 4000) + 1000),
