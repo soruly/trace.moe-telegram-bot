@@ -254,24 +254,23 @@ const submitSearch = (
     });
   });
 
-const messageIsMentioningBot = (message: Message) => {
+const messageIsMentioningBot = (botName: string, message: Message) => {
+  const botNameLowerCase = `@${botName.toLowerCase()}`;
   if (message.entities) {
-    return message.entities
-      .filter((entity) => entity.type === "mention")
-      .some((entity) =>
-        message.text
-          .substring(entity.offset, entity.offset + entity.length)
-          .match(new RegExp(`^@${botName}$`, "i")),
-      );
+    return message.entities.some(
+      (entity) =>
+        entity.type === "mention" &&
+        message.text.substring(entity.offset, entity.offset + entity.length).toLowerCase() ===
+          botNameLowerCase,
+    );
   }
   if (message.caption_entities) {
-    return message.caption_entities
-      .filter((entity) => entity.type === "mention")
-      .some((entity) =>
-        message.caption
-          .substring(entity.offset, entity.offset + entity.length)
-          .match(new RegExp(`^@${botName}$`, "i")),
-      );
+    return message.caption_entities.some(
+      (entity) =>
+        entity.type === "mention" &&
+        message.caption.substring(entity.offset, entity.offset + entity.length).toLowerCase() ===
+          botNameLowerCase,
+    );
   }
   return false;
 };
@@ -537,7 +536,7 @@ const server = http.createServer({ keepAliveTimeout: 60000 }, async (req, res) =
           reaction: [],
         });
       } else if (message?.chat?.type === "group" || message?.chat?.type === "supergroup") {
-        if (messageIsMentioningBot(message)) {
+        if (messageIsMentioningBot(botName, message)) {
           await groupMessageHandler(message);
           setMessageReaction({
             chat_id: message.chat.id,
