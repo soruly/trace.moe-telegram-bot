@@ -19,7 +19,6 @@ const {
   TELEGRAM_TOKEN,
   TELEGRAM_WEBHOOK,
   TRACE_MOE_KEY,
-  HEROKU_SLUG_COMMIT,
   DB_HOST,
   DB_PORT,
   DB_NAME,
@@ -69,7 +68,7 @@ fetch(`${TELEGRAM_API}/bot${TELEGRAM_TOKEN}/getMe`)
 
 let REVISION;
 try {
-  REVISION = HEROKU_SLUG_COMMIT ?? child_process.execSync("git rev-parse HEAD").toString().trim();
+  REVISION = child_process.execSync("git rev-parse HEAD").toString().trim();
 } catch (e) {
   REVISION = "";
 }

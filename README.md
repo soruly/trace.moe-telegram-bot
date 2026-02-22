@@ -53,10 +53,6 @@ ADDR=                 # (optional) Default: 0.0.0.0
 TRACE_MOE_KEY=        # (optional)
 ```
 
-### Deploy to Heroku
-
-[![Deploy](https://www.herokucdn.com/deploy/button.svg)](https://heroku.com/deploy?template=https://github.com/soruly/trace.moe-telegram-bot)
-
 ### Host with docker
 
 Docker Image available on [Docker Hub](https://hub.docker.com/repository/docker/soruly/trace.moe-telegram-bot) or [GitHub Container Registry](https://github.com/soruly/trace.moe-telegram-bot/pkgs/container/trace.moe-telegram-bot)
