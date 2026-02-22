@@ -1,4 +1,5 @@
 import child_process from "node:child_process";
+import crypto from "node:crypto";
 import http from "node:http";
 import sqlite from "node:sqlite";
 import packageConfig from "./package.json" with { type: "json" };
@@ -51,8 +52,10 @@ const select = database.prepare(
 const insert = database.prepare("INSERT INTO logs (user_id, code) VALUES ($user_id, $code)");
 
 console.log("Setting Telegram webhook...");
+
+const SECRET_TOKEN = crypto.randomBytes(32).toString("hex");
 await fetch(
-  `${TELEGRAM_API}/bot${TELEGRAM_TOKEN}/setWebhook?url=${TELEGRAM_WEBHOOK}&max_connections=100`,
+  `${TELEGRAM_API}/bot${TELEGRAM_TOKEN}/setWebhook?url=${TELEGRAM_WEBHOOK}&max_connections=100&secret_token=${SECRET_TOKEN}`,
 )
   .then((e) => e.json())
   .then((e) => {
@@ -515,6 +518,14 @@ const getBody = (req: http.IncomingMessage): Promise<string> =>
 
 const server = http.createServer({ keepAliveTimeout: 60000 }, async (req, res) => {
   if (req.method === "POST") {
+    const clientSecret = req.headers["x-telegram-bot-api-secret-token"];
+    if (
+      typeof clientSecret !== "string" ||
+      clientSecret.length !== SECRET_TOKEN.length ||
+      !crypto.timingSafeEqual(Buffer.from(clientSecret), Buffer.from(SECRET_TOKEN))
+    ) {
+      return res.writeHead(403).end();
+    }
     try {
       const request = JSON.parse(await getBody(req));
       const message: Message = request.message ?? request.edited_message;
