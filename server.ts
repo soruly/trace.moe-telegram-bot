@@ -167,16 +167,16 @@ interface SearchResult {
   video?: string;
 }
 
-const submitSearch = (
+const submitSearch = async (
   imageFileURL: string,
   userId: number,
   opts: SearchOptions,
-): Promise<SearchResult> =>
-  new Promise(async (resolve, reject) => {
-    let trial = 5;
-    let response = null;
-    while (trial > 0 && (!response || response.status === 503 || response.status === 402)) {
-      trial--;
+): Promise<SearchResult> => {
+  let trial = 5;
+  let response = null;
+  while (trial > 0 && (!response || response.status === 503 || response.status === 402)) {
+    trial--;
+    try {
       response = await fetch(
         `https://api.trace.moe/search?${[
           "anilistInfo=1",
@@ -184,75 +184,74 @@ const submitSearch = (
           opts.noCrop ? "" : "cutBorders=1",
         ].join("&")}`,
         TRACE_MOE_KEY ? { headers: { "x-trace-key": TRACE_MOE_KEY } } : {},
-      ).catch((e) => {
-        trial = 0;
-        return resolve({ text: "`trace.moe API error, please try again later.`" });
-      });
-      if (!response) {
-        trial = 0;
-        return resolve({ text: "`trace.moe API error, please try again later.`" });
-      }
-      insert.run({ $user_id: userId, $code: response.status });
-      if (response.status === 503 || response.status === 402) {
-        await new Promise((resolve) =>
-          setTimeout(resolve, Math.floor(Math.random() * 4000) + 1000),
-        );
-      } else trial = 0;
+      );
+    } catch (e) {
+      trial = 0;
+      return { text: "`trace.moe API error, please try again later.`" };
     }
     if (!response) {
-      return resolve({ text: "`trace.moe API error, please try again later.`" });
+      trial = 0;
+      return { text: "`trace.moe API error, please try again later.`" };
     }
+    insert.run({ $user_id: userId, $code: response.status });
+    if (response.status === 503 || response.status === 402) {
+      await new Promise((resolve) => setTimeout(resolve, Math.floor(Math.random() * 4000) + 1000));
+    } else trial = 0;
+  }
+  if (!response) {
+    return { text: "`trace.moe API error, please try again later.`" };
+  }
 
-    if ([502, 503, 504].includes(response.status)) {
-      return resolve({ text: "`trace.moe server is busy, please try again later.`" });
-    }
-    if (response.status === 402 || response.status === 429) {
-      return resolve({ text: "`You exceeded the search limit, please try again later`" });
-    }
-    if (response.status >= 400) {
-      console.error(await response.text());
-      return resolve({ text: "`trace.moe API error, please try again later.`" });
-    }
-    const searchResult = await response.json();
-    if (response.status >= 400 || searchResult.error) {
-      return resolve({
-        text: searchResult.error
-          ? `\`${searchResult.error.replace(/TELEGRAM_TOKEN/g, "{TELEGRAM_TOKEN}")}\``
-          : `Error: HTTP ${response.status}`,
-      });
-    }
-    if (searchResult?.result?.length <= 0) {
-      return resolve({ text: "Cannot find any results from trace.moe" });
-    }
-    const { anilist, similarity, filename, from, to, video }: APISearchResult =
-      searchResult.result[0];
-    const { title: { chinese, english, native, romaji } = {}, isAdult } = anilist ?? {};
-    let text = "";
-    const titles: string[] = [];
-    if (native) titles.push(native);
-    if (chinese && !titles.includes(chinese)) titles.push(chinese);
-    if (romaji && !titles.includes(romaji)) titles.push(romaji);
-    if (english && !titles.includes(english)) titles.push(english);
+  if ([502, 503, 504].includes(response.status)) {
+    return { text: "`trace.moe server is busy, please try again later.`" };
+  }
+  if (response.status === 402 || response.status === 429) {
+    return { text: "`You exceeded the search limit, please try again later`" };
+  }
+  if (response.status >= 400) {
+    console.error(await response.text());
+    return { text: "`trace.moe API error, please try again later.`" };
+  }
+  const searchResult = await response.json();
+  if (response.status >= 400 || searchResult.error) {
+    return {
+      text: searchResult.error
+        ? `\`${searchResult.error.replace(/TELEGRAM_TOKEN/g, "{TELEGRAM_TOKEN}")}\``
+        : `Error: HTTP ${response.status}`,
+    };
+  }
+  if (searchResult?.result?.length <= 0) {
+    return { text: "Cannot find any results from trace.moe" };
+  }
+  const { anilist, similarity, filename, from, to, video }: APISearchResult =
+    searchResult.result[0];
+  const { title: { chinese, english, native, romaji } = {}, isAdult } = anilist ?? {};
+  let text = "";
+  const titles: string[] = [];
+  if (native) titles.push(native);
+  if (chinese && !titles.includes(chinese)) titles.push(chinese);
+  if (romaji && !titles.includes(romaji)) titles.push(romaji);
+  if (english && !titles.includes(english)) titles.push(english);
 
-    text += titles.map((t) => `\`${t}\``).join("\n");
-    text += "\n";
-    text += `\`${filename.replace(/`/g, "``")}\`\n`;
-    if (formatTime(from) === formatTime(to)) {
-      text += `\`${formatTime(from)}\`\n`;
-    } else {
-      text += `\`${formatTime(from)}\` - \`${formatTime(to)}\`\n`;
-    }
-    text += `\`${(similarity * 100).toFixed(1)}% similarity\`\n`;
-    const url = new URL(video);
-    const urlSearchParams = new URLSearchParams(url.search);
-    urlSearchParams.set("size", "l");
-    url.search = urlSearchParams.toString();
-    return resolve({
-      isAdult,
-      text,
-      video: url.toString(),
-    });
-  });
+  text += titles.map((t) => `\`${t}\``).join("\n");
+  text += "\n";
+  text += `\`${filename.replace(/`/g, "``")}\`\n`;
+  if (formatTime(from) === formatTime(to)) {
+    text += `\`${formatTime(from)}\`\n`;
+  } else {
+    text += `\`${formatTime(from)}\` - \`${formatTime(to)}\`\n`;
+  }
+  text += `\`${(similarity * 100).toFixed(1)}% similarity\`\n`;
+  const url = new URL(video);
+  const urlSearchParams = new URLSearchParams(url.search);
+  urlSearchParams.set("size", "l");
+  url.search = urlSearchParams.toString();
+  return {
+    isAdult,
+    text,
+    video: url.toString(),
+  };
+};
 
 const messageIsMentioningBot = (botName: string, message: Message) => {
   const botNameLowerCase = `@${botName.toLowerCase()}`;
