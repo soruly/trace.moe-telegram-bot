@@ -171,11 +171,29 @@ interface SearchResult {
   video?: string;
 }
 
+// Cache for trace.moe search results to reduce API calls and latency
+// Key: imageFileURL-noCrop, Value: SearchResult and timestamp
+// TTL: 10 minutes, Max Size: 100 entries (LRU)
+const searchCache = new Map<string, { result: SearchResult; timestamp: number }>();
+
 const submitSearch = async (
   imageFileURL: string,
   userId: number,
   opts: SearchOptions,
 ): Promise<SearchResult> => {
+  const cacheKey = `${imageFileURL}-${opts.noCrop}`;
+  if (searchCache.has(cacheKey)) {
+    const cached = searchCache.get(cacheKey)!;
+    if (Date.now() - cached.timestamp < 1000 * 60 * 10) {
+      // LRU: Refresh timestamp and move to end of Map
+      searchCache.delete(cacheKey);
+      searchCache.set(cacheKey, { result: cached.result, timestamp: Date.now() });
+      insert.run({ $user_id: userId, $code: 200 });
+      return cached.result;
+    }
+    searchCache.delete(cacheKey);
+  }
+
   let trial = 5;
   let response = null;
   while (trial > 0 && (!response || response.status === 503 || response.status === 402)) {
@@ -250,11 +268,17 @@ const submitSearch = async (
   const urlSearchParams = new URLSearchParams(url.search);
   urlSearchParams.set("size", "l");
   url.search = urlSearchParams.toString();
-  return {
+  const result = {
     isAdult,
     text,
     video: url.toString(),
   };
+  searchCache.set(cacheKey, { result, timestamp: Date.now() });
+  if (searchCache.size > 100) {
+    const firstKey = searchCache.keys().next().value;
+    if (firstKey) searchCache.delete(firstKey);
+  }
+  return result;
 };
 
 const messageIsMentioningBot = (message: Message) => {
