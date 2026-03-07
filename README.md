@@ -92,7 +92,8 @@ Put this file to `/etc/systemd/system/trace.moe-telegram-bot.service`
 ```
 [Unit]
 Description=trace.moe-telegram-bot
-After=network.target
+Wants=network-online.target
+After=network-online.target
 
 [Service]
 User=____
