@@ -85,18 +85,23 @@ npm install
 node server.ts
 ```
 
-### Host bare-metal with pm2
+### Run as systemd
 
-You also can use [pm2](https://pm2.keymetrics.io/) to run this in background in cluster mode.
-
-Use below commands to start / restart / stop server.
+Put this file to `/etc/systemd/system/trace.moe-telegram-bot.service`
 
 ```
-npm run start
-npm run stop
-npm run reload
-npm run restart
-npm run delete
-```
+[Unit]
+Description=trace.moe-telegram-bot
+After=network.target
 
-To change the number of nodejs instances, edit ecosystem.config.json
+[Service]
+User=____
+Group=____
+WorkingDirectory=/home/____/project/trace.moe-telegram-bot
+Environment=NODE_ENV=production
+ExecStart=/usr/bin/node --dns-result-order=ipv6first /home/____/project/trace.moe-telegram-bot/server.ts
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+```
