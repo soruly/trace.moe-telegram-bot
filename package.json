@@ -23,7 +23,7 @@
   },
   "devDependencies": {
     "@effect-ak/tg-bot-api": "^1.5.1",
-    "@types/node": "^25.6.0",
+    "@types/node": "^25.6.2",
     "oxfmt": "^0.48.0"
   }
 }
