@@ -527,9 +527,9 @@ const guestMessageHandler = async (message: Message) => {
         id: message?.guest_query_id,
         title: "placeholder",
         input_message_content: {
-          message_text: "Mention me in an anime screenshot, I will tell you what anime is that"
-        }
-      }
+          message_text: "Mention me in an anime screenshot, I will tell you what anime is that",
+        },
+      },
     });
     return;
   }
@@ -547,9 +547,10 @@ const guestMessageHandler = async (message: Message) => {
         id: message?.guest_query_id,
         title: "placeholder",
         input_message_content: {
-          message_text: "I've found an adult result 😳\nPlease forward it to me via Private Chat 😏"
-        }
-      }
+          message_text:
+            "I've found an adult result 😳\nPlease forward it to me via Private Chat 😏",
+        },
+      },
     });
     return;
   }
@@ -569,7 +570,7 @@ const guestMessageHandler = async (message: Message) => {
           thumbnail_url: result.image,
           caption: escapeMarkdownV2(result.text),
           parse_mode: "MarkdownV2",
-        }
+        },
       });
       return;
     }
@@ -583,11 +584,11 @@ const guestMessageHandler = async (message: Message) => {
       title: "placeholder",
       input_message_content: {
         message_text: escapeMarkdownV2(result.text),
-        parse_mode: "MarkdownV2"
-      }
-    }
-  })
-}
+        parse_mode: "MarkdownV2",
+      },
+    },
+  });
+};
 
 const getBody = async (req: http.IncomingMessage): Promise<string> => {
   const chunks: Buffer[] = [];
