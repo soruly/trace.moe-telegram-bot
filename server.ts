@@ -11,6 +11,7 @@ import type {
   SendMessageInput,
   SendVideoInput,
   SetMessageReactionInput,
+  AnswerGuestQueryInput,
 } from "@effect-ak/tg-bot-api";
 
 import packageConfig from "./package.json" with { type: "json" };
@@ -57,7 +58,7 @@ console.log("Setting Telegram webhook...");
 
 const SECRET_TOKEN = crypto.randomBytes(32).toString("hex");
 await fetch(
-  `${TELEGRAM_API}/bot${TELEGRAM_TOKEN}/setWebhook?url=${TELEGRAM_WEBHOOK}&max_connections=100&secret_token=${SECRET_TOKEN}`,
+  `${TELEGRAM_API}/bot${TELEGRAM_TOKEN}/setWebhook?url=${TELEGRAM_WEBHOOK}&max_connections=100&allowed_updates=%5B%22message%22%2C%22edited_message%22%2C%22guest_message%22%5D&secret_token=${SECRET_TOKEN}`,
 )
   .then((e) => e.json())
   .then((e) => {
@@ -133,6 +134,15 @@ const sendVideo = (payload: SendVideoInput) =>
     .then((e) => e.json())
     .then((e) => e.result);
 
+const answerGuestQuery = (payload: AnswerGuestQueryInput) =>
+  fetch(`${TELEGRAM_API}/bot${TELEGRAM_TOKEN}/answerGuestQuery`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  })
+    .then((e) => e.json())
+    .then((e) => e.result);
+
 const formatTime = (duration: number) => {
   const hours = Math.floor(duration / 3600);
   const minutes = Math.floor((duration - hours * 3600) / 60);
@@ -171,6 +181,7 @@ interface SearchResult {
   isAdult?: boolean;
   text: string;
   video?: string;
+  image?: string;
 }
 
 const submitSearch = async (
@@ -226,7 +237,7 @@ const submitSearch = async (
   if (searchResult?.result?.length <= 0) {
     return { text: "Cannot find any results from trace.moe" };
   }
-  const { anilist, similarity, filename, from, to, video }: APISearchResult =
+  const { anilist, similarity, filename, from, to, video, image }: APISearchResult =
     searchResult.result[0];
   const { title: { chinese, english, native, romaji } = {}, isAdult } = anilist ?? {};
   let text = "";
@@ -253,6 +264,7 @@ const submitSearch = async (
     isAdult,
     text,
     video: url.toString(),
+    image: image,
   };
 };
 
@@ -497,6 +509,86 @@ const groupMessageHandler = async (message: Message) => {
   });
 };
 
+const guestMessageHandler = async (message: Message) => {
+  const userId = message.from?.id ?? 0;
+  const searchOpts = getSearchOpts(message);
+  const responding_msg = message.reply_to_message
+    ? message.reply_to_message
+    : message.external_reply
+      ? message.external_reply
+      : message;
+  const imageURL = await getImageFromMessage(responding_msg);
+  if (!imageURL) {
+    // cannot find image from the message mentioning the bot
+    await answerGuestQuery({
+      guest_query_id: message?.guest_query_id,
+      result: {
+        type: "article",
+        id: message?.guest_query_id,
+        title: "placeholder",
+        input_message_content: {
+          message_text: "Mention me in an anime screenshot, I will tell you what anime is that"
+        }
+      }
+    });
+    return;
+  }
+
+  const result = await enqueueUserTask(userId, async () => {
+    const result = await submitSearch(imageURL, userId, searchOpts);
+    return result;
+  });
+
+  if (result.isAdult) {
+    await answerGuestQuery({
+      guest_query_id: message?.guest_query_id,
+      result: {
+        type: "article",
+        id: message?.guest_query_id,
+        title: "placeholder",
+        input_message_content: {
+          message_text: "I've found an adult result 😳\nPlease forward it to me via Private Chat 😏"
+        }
+      }
+    });
+    return;
+  }
+
+  if (result.video && !searchOpts.skip) {
+    const videoLink = searchOpts.mute ? `${result.video}&mute` : result.video;
+    const video = await fetch(videoLink, { method: "HEAD" });
+    if (video.ok && Number(video.headers.get("content-length")) > 0) {
+      await answerGuestQuery({
+        guest_query_id: message?.guest_query_id,
+        result: {
+          type: "video",
+          id: message?.guest_query_id,
+          title: "placeholder",
+          video_url: videoLink,
+          mime_type: "video/mp4",
+          thumbnail_url: result.image,
+          caption: escapeMarkdownV2(result.text),
+          parse_mode: "MarkdownV2",
+        }
+      });
+      return;
+    }
+  }
+
+  await answerGuestQuery({
+    guest_query_id: message?.guest_query_id,
+    result: {
+      type: "article",
+      id: message?.guest_query_id,
+      title: "placeholder",
+      input_message_content: {
+        message_text: escapeMarkdownV2(result.text),
+        parse_mode: "MarkdownV2"
+      }
+    }
+  })
+}
+
 const getBody = async (req: http.IncomingMessage): Promise<string> => {
   const chunks: Buffer[] = [];
   let size = 0;
@@ -524,8 +616,10 @@ const server = http.createServer({ keepAliveTimeout: 60000 }, async (req, res) =
     }
     try {
       const request = JSON.parse(await getBody(req));
-      const message: Message = request.message ?? request.edited_message;
-      if (message?.chat?.type === "private") {
+      const message: Message = request.message ?? request.edited_message ?? request.guest_message;
+      if (message?.guest_query_id) {
+        await guestMessageHandler(message);
+      } else if (message?.chat?.type === "private") {
         await privateMessageHandler(message);
         setMessageReaction({
           chat_id: message.chat.id,
