@@ -618,7 +618,7 @@ const server = http.createServer({ keepAliveTimeout: 60000 }, async (req, res) =
     try {
       const request = JSON.parse(await getBody(req));
       const message: Message = request.message ?? request.edited_message ?? request.guest_message;
-      if (message?.guest_query_id) {
+      if (message?.guest_query_id && messageIsMentioningBot(message)) {
         await guestMessageHandler(message);
       } else if (message?.chat?.type === "private") {
         await privateMessageHandler(message);
