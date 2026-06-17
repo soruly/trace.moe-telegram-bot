@@ -22,7 +22,7 @@
     "test": "oxfmt --check \"**/*.*\""
   },
   "devDependencies": {
-    "@effect-ak/tg-bot-api": "^1.6.0",
+    "@effect-ak/tg-bot-api": "^1.7.0",
     "@types/node": "^25.9.3",
     "oxfmt": "^0.54.0"
   }
