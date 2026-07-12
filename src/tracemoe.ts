@@ -101,12 +101,16 @@ export const submitSearch = async (
   const { anilist, similarity, filename, from, to, video, image }: APISearchResult =
     searchResult.result[0];
   const { title: { chinese, english, native, romaji } = {}, isAdult } = anilist ?? {};
+  const code = langCode ? langCode.toLowerCase() : "en";
+  const isEn = code.startsWith("en");
+  const isZh = code.startsWith("zh");
+
   let text = "";
   const titles: string[] = [];
   if (native) titles.push(native);
-  if (chinese && !titles.includes(chinese)) titles.push(chinese);
-  if (romaji && !titles.includes(romaji)) titles.push(romaji);
-  if (english && !titles.includes(english)) titles.push(english);
+  if (chinese && !isEn && !titles.includes(chinese)) titles.push(chinese);
+  if (romaji && !isZh && !titles.includes(romaji)) titles.push(romaji);
+  if (english && !isZh && !titles.includes(english)) titles.push(english);
 
   text += titles.map((t) => `\`${escapeCode(t)}\``).join("\n");
   text += "\n";
