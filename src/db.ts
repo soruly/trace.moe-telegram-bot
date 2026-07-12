@@ -15,6 +15,9 @@ CREATE INDEX IF NOT EXISTS idx_logs_code ON logs (code);
 CREATE INDEX IF NOT EXISTS idx_logs_created_user_id_code ON logs (created, user_id, code);
 `);
 
+database.exec("DELETE FROM logs WHERE created < datetime('now', '-30 days')");
+database.exec("VACUUM");
+
 export const select = database.prepare(
   "SELECT COUNT(*) AS count FROM logs WHERE user_id = $user_id AND code = 200 AND created > datetime('now', '-30 days')",
 );
