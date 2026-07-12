@@ -104,13 +104,16 @@ export const submitSearch = async (
   const code = langCode ? langCode.toLowerCase() : "en";
   const isEn = code.startsWith("en");
   const isZh = code.startsWith("zh");
+  const isJa = code.startsWith("ja");
 
   let text = "";
   const titles: string[] = [];
   if (native) titles.push(native);
-  if (chinese && !isEn && !titles.includes(chinese)) titles.push(chinese);
-  if (romaji && !isZh && !titles.includes(romaji)) titles.push(romaji);
-  if (english && !isZh && !titles.includes(english)) titles.push(english);
+  if (chinese && isZh && !titles.includes(chinese)) titles.push(chinese);
+  if (romaji && !titles.includes(romaji)) {
+    if (!(isZh || isJa) || titles.length === 0) titles.push(romaji);
+  }
+  if (english && isEn && !titles.includes(english)) titles.push(english);
 
   text += titles.map((t) => `\`${escapeCode(t)}\``).join("\n");
   text += "\n";
