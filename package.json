@@ -24,6 +24,6 @@
   "devDependencies": {
     "@effect-ak/tg-bot-api": "^1.8.0",
     "@types/node": "^26.1.1",
-    "oxfmt": "^0.58.0"
+    "oxfmt": "^0.59.0"
   }
 }
