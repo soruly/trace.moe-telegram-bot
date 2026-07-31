@@ -64,6 +64,18 @@ export const answerGuestQuery = (payload: AnswerGuestQueryInput) =>
     .then((e) => e.json())
     .then((e) => e.result);
 
+export const setMyCommands = (payload: {
+  commands: Array<{ command: string; description: string }>;
+  language_code?: string;
+}) =>
+  fetch(`${TELEGRAM_API}/bot${TELEGRAM_TOKEN}/setMyCommands`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  })
+    .then((e) => e.json())
+    .then((e) => e.result);
+
 export const messageIsMentioningBot = (message: Message) => {
   if (!botNameLowerCase || botNameLowerCase === "@") return false;
   if (message.entities) {

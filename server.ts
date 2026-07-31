@@ -5,7 +5,14 @@ import type { Message } from "@effect-ak/tg-bot-api";
 
 import { PORT, ADDR, TELEGRAM_TOKEN, TELEGRAM_WEBHOOK, TELEGRAM_API } from "./src/config.ts";
 import { privateMessageHandler, groupMessageHandler, guestMessageHandler } from "./src/handlers.ts";
-import { botName, setBotName, setMessageReaction, messageIsMentioningBot } from "./src/telegram.ts";
+import { getTranslation, locales } from "./src/i18n.ts";
+import {
+  botName,
+  setBotName,
+  setMessageReaction,
+  messageIsMentioningBot,
+  setMyCommands,
+} from "./src/telegram.ts";
 
 console.log(`WEBHOOK: ${TELEGRAM_WEBHOOK}`);
 console.log(`Use trace.moe API: ${process.env.TRACE_MOE_KEY ? "with" : "without"} API Key`);
@@ -20,6 +27,17 @@ await fetch(
   .then((e) => {
     console.log(e);
   });
+
+for (const langCode of Object.keys(locales)) {
+  setMyCommands({
+    commands: [
+      { command: "help", description: getTranslation(langCode, "helpCommandDescription") },
+    ],
+    language_code: langCode,
+  }).catch((err) => {
+    console.error(`Failed to set bot commands for ${langCode}:`, err);
+  });
+}
 
 fetch(`${TELEGRAM_API}/bot${TELEGRAM_TOKEN}/getMe`)
   .then((e) => e.json())

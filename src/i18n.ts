@@ -5,6 +5,7 @@ export interface LocaleStrings {
   helpHomepage: string;
   helpSearchCount: string;
   helpLanguage: string;
+  helpCommandDescription: string;
   apiError: string;
   apiBusy: string;
   apiLimitExceeded: string;
@@ -21,6 +22,7 @@ export const defaultLocale: LocaleStrings = {
   helpHomepage: "Homepage: {homepage}",
   helpSearchCount: "Your search count (last 30 days): {count}",
   helpLanguage: "Language: `{langCode}` -> `{locale}`",
+  helpCommandDescription: "Get help and info on how to use trace.moe bot",
   apiError: "`trace.moe API error, please try again later.`",
   apiBusy: "`trace.moe server is busy, please try again later.`",
   apiLimitExceeded: "`You exceeded the search limit, please try again later`",
@@ -37,6 +39,7 @@ const zhHansLocale: LocaleStrings = {
   helpHomepage: "主页: {homepage}",
   helpSearchCount: "您最近 30 天的搜索次数: {count}",
   helpLanguage: "语言: `{langCode}` -> `{locale}`",
+  helpCommandDescription: "获取帮助和 trace.moe 机器人使用说明",
   apiError: "`trace.moe API 错误，请稍后再试。`",
   apiBusy: "`trace.moe 服务器繁忙，请稍后再试。`",
   apiLimitExceeded: "`您已超出搜索限制，请稍后再试`",
@@ -53,6 +56,7 @@ const zhHantLocale: LocaleStrings = {
   helpHomepage: "主頁: {homepage}",
   helpSearchCount: "您最近 30 天的搜尋次數: {count}",
   helpLanguage: "語言: `{langCode}` -> `{locale}`",
+  helpCommandDescription: "獲取幫助和 trace.moe 機器人使用說明",
   apiError: "`trace.moe API 錯誤，請稍後再試。`",
   apiBusy: "`trace.moe 伺服器繁忙，請稍後再試。`",
   apiLimitExceeded: "`您已超出搜尋限制，請稍後再試`",
@@ -69,6 +73,7 @@ const jaLocale: LocaleStrings = {
   helpHomepage: "ホームページ: {homepage}",
   helpSearchCount: "検索回数 (過去30日間): {count}",
   helpLanguage: "言語: `{langCode}` -> `{locale}`",
+  helpCommandDescription: "ヘルプと trace.moe ボットの使い方を表示",
   apiError: "`trace.moe APIエラーが発生しました。時間をおいてもう一度お試しください。`",
   apiBusy: "`trace.moe サーバーが混雑しています。時間をおいてもう一度お試しください。`",
   apiLimitExceeded: "`検索制限を超過しました。時間をおいてもう一度お試しください`",
