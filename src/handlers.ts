@@ -41,6 +41,7 @@ export const privateMessageHandler = async (message: Message) => {
         chat_id: message.chat.id,
         text: escapeMarkdownV2(await getHelpMessage(botName, userId, langCode)),
         parse_mode: "MarkdownV2",
+        link_preview_options: { is_disabled: true },
       });
     }
     return await sendMessage({
@@ -108,6 +109,7 @@ export const groupMessageHandler = async (message: Message) => {
         text: escapeMarkdownV2(await getHelpMessage(botName, userId, langCode)),
         parse_mode: "MarkdownV2",
         reply_parameters: { message_id: message.message_id },
+        link_preview_options: { is_disabled: true },
       });
     }
     // cannot find image from the message mentioning the bot
