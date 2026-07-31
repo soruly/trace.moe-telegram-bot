@@ -27,6 +27,7 @@ export const getHelpMessage = async (botName: string, fromId: number, langCode?:
       langCode: langCode ?? "(none)",
       locale: getMappedLocale(langCode),
     }),
+    getTranslation(langCode, "helpOptions"),
   ]
     .filter((e) => e)
     .join("\n");

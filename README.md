@@ -29,6 +29,16 @@ https://user-images.githubusercontent.com/1979746/126060529-8a33523a-967b-48de-9
 4. The bot will tell you the anime, episode, and time code of it
 5. It will also send you a video preview of that scene
 
+### Search Options
+
+When sending or replying with an image, you can include optional keywords in your message text or caption:
+
+- `mute`: Mutes the audio of the generated preview video.
+- `nocrop`: Disables automatic border cropping before searching.
+- `skip`: Skips generating the preview video and returns only the text search result.
+
+Example: `@WhatAnimeBot mute nocrop` or captioning an image with `skip`.
+
 ## How to use (in group)
 
 1. In a group, reply to an anime screenshot and mention the bot with `@WhatAnimeBot`

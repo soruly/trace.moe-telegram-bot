@@ -5,6 +5,7 @@ export interface LocaleStrings {
   helpHomepage: string;
   helpSearchCount: string;
   helpLanguage: string;
+  helpOptions: string;
   helpCommandDescription: string;
   apiError: string;
   apiBusy: string;
@@ -22,6 +23,8 @@ export const defaultLocale: LocaleStrings = {
   helpHomepage: "Homepage: {homepage}",
   helpSearchCount: "Your search count (last 30 days): {count}",
   helpLanguage: "Language: `{langCode}` -> `{locale}`",
+  helpOptions:
+    "Options: include 'mute' (mute video), 'nocrop' (disable auto-crop), or 'skip' (skip video preview) in text or caption",
   helpCommandDescription: "Get help and info on how to use trace.moe bot",
   apiError: "`trace.moe API error, please try again later.`",
   apiBusy: "`trace.moe server is busy, please try again later.`",
@@ -39,6 +42,8 @@ const zhHansLocale: LocaleStrings = {
   helpHomepage: "主页: {homepage}",
   helpSearchCount: "您最近 30 天的搜索次数: {count}",
   helpLanguage: "语言: `{langCode}` -> `{locale}`",
+  helpOptions:
+    "选项：在消息或附言中包含 'mute' (静音视频)，'nocrop' (禁用自动裁剪)，或 'skip' (跳过视频预览)",
   helpCommandDescription: "获取帮助和 trace.moe 机器人使用说明",
   apiError: "`trace.moe API 错误，请稍后再试。`",
   apiBusy: "`trace.moe 服务器繁忙，请稍后再试。`",
@@ -56,6 +61,8 @@ const zhHantLocale: LocaleStrings = {
   helpHomepage: "主頁: {homepage}",
   helpSearchCount: "您最近 30 天的搜尋次數: {count}",
   helpLanguage: "語言: `{langCode}` -> `{locale}`",
+  helpOptions:
+    "選項：在訊息或附言中包含 'mute' (靜音影片)，'nocrop' (禁用自動裁剪)，或 'skip' (跳過影片預覽)",
   helpCommandDescription: "獲取幫助和 trace.moe 機器人使用說明",
   apiError: "`trace.moe API 錯誤，請稍後再試。`",
   apiBusy: "`trace.moe 伺服器繁忙，請稍後再試。`",
@@ -73,6 +80,8 @@ const jaLocale: LocaleStrings = {
   helpHomepage: "ホームページ: {homepage}",
   helpSearchCount: "検索回数 (過去30日間): {count}",
   helpLanguage: "言語: `{langCode}` -> `{locale}`",
+  helpOptions:
+    "オプション：メッセージまたはキャプションに 'mute' (消音)、'nocrop' (自動クロップ無効)、または 'skip' (動画プレビュー省略) を含める",
   helpCommandDescription: "ヘルプと trace.moe ボットの使い方を表示",
   apiError: "`trace.moe APIエラーが発生しました。時間をおいてもう一度お試しください。`",
   apiBusy: "`trace.moe サーバーが混雑しています。時間をおいてもう一度お試しください。`",
