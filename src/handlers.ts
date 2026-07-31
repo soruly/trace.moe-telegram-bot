@@ -9,7 +9,6 @@ import {
   sendVideo,
   answerGuestQuery,
   getImageFromMessage,
-  messageIsMentioningBot,
 } from "./telegram.ts";
 import { submitSearch, type SearchOptions } from "./tracemoe.ts";
 import { getHelpMessage, escapeMarkdownV2, enqueueUserTask } from "./utils.ts";
@@ -36,7 +35,7 @@ export const privateMessageHandler = async (message: Message) => {
   const reply_msg_id = message.external_reply ? message.message_id : responding_msg.message_id;
   const imageURL = await getImageFromMessage(responding_msg);
   if (!imageURL) {
-    if (message.text?.toLowerCase().includes("/help")) {
+    if ((message.text ?? message.caption)?.toLowerCase().includes("/help")) {
       return await sendMessage({
         chat_id: message.chat.id,
         text: escapeMarkdownV2(await getHelpMessage(botName, userId, langCode)),
@@ -103,7 +102,7 @@ export const groupMessageHandler = async (message: Message) => {
   const reply_msg_id = message.external_reply ? message.message_id : responding_msg.message_id;
   const imageURL = await getImageFromMessage(responding_msg);
   if (!imageURL) {
-    if (message.text?.toLowerCase().includes("/help")) {
+    if ((message.text ?? message.caption)?.toLowerCase().includes("/help")) {
       return await sendMessage({
         chat_id: message.chat.id,
         text: escapeMarkdownV2(await getHelpMessage(botName, userId, langCode)),

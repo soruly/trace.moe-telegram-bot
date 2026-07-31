@@ -65,23 +65,42 @@ export const answerGuestQuery = (payload: AnswerGuestQueryInput) =>
     .then((e) => e.result);
 
 export const messageIsMentioningBot = (message: Message) => {
+  if (!botNameLowerCase || botNameLowerCase === "@") return false;
   if (message.entities) {
-    return message.entities.some(
-      (entity) =>
-        entity.type === "mention" &&
-        entity.length === botNameLowerCase.length &&
-        message.text.substring(entity.offset, entity.offset + entity.length).toLowerCase() ===
-          botNameLowerCase,
-    );
+    return message.entities.some((entity) => {
+      if (entity.type === "mention") {
+        return (
+          entity.length === botNameLowerCase.length &&
+          message.text?.substring(entity.offset, entity.offset + entity.length).toLowerCase() ===
+            botNameLowerCase
+        );
+      }
+      if (entity.type === "bot_command") {
+        const text = message.text
+          ?.substring(entity.offset, entity.offset + entity.length)
+          .toLowerCase();
+        return text?.endsWith(botNameLowerCase);
+      }
+      return false;
+    });
   }
   if (message.caption_entities) {
-    return message.caption_entities.some(
-      (entity) =>
-        entity.type === "mention" &&
-        entity.length === botNameLowerCase.length &&
-        message.caption.substring(entity.offset, entity.offset + entity.length).toLowerCase() ===
-          botNameLowerCase,
-    );
+    return message.caption_entities.some((entity) => {
+      if (entity.type === "mention") {
+        return (
+          entity.length === botNameLowerCase.length &&
+          message.caption?.substring(entity.offset, entity.offset + entity.length).toLowerCase() ===
+            botNameLowerCase
+        );
+      }
+      if (entity.type === "bot_command") {
+        const text = message.caption
+          ?.substring(entity.offset, entity.offset + entity.length)
+          .toLowerCase();
+        return text?.endsWith(botNameLowerCase);
+      }
+      return false;
+    });
   }
   return false;
 };
