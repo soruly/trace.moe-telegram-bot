@@ -3,7 +3,7 @@ import child_process from "node:child_process";
 import packageConfig from "../package.json" with { type: "json" };
 import { TRACE_MOE_KEY } from "./config.ts";
 import { select } from "./db.ts";
-import { getTranslation } from "./i18n.ts";
+import { getTranslation, getMappedLocale } from "./i18n.ts";
 
 let REVISION: string;
 try {
@@ -23,6 +23,10 @@ export const getHelpMessage = async (botName: string, fromId: number, langCode?:
     getTranslation(langCode, "helpApiKey", { hasKey: TRACE_MOE_KEY ? "true" : "false" }),
     getTranslation(langCode, "helpHomepage", { homepage: packageConfig.homepage ?? "" }),
     getTranslation(langCode, "helpSearchCount", { count }),
+    getTranslation(langCode, "helpLanguage", {
+      langCode: langCode ?? "(none)",
+      locale: getMappedLocale(langCode),
+    }),
   ]
     .filter((e) => e)
     .join("\n");
