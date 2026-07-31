@@ -14,10 +14,12 @@ https://user-images.githubusercontent.com/1979746/126060529-8a33523a-967b-48de-9
 
 ## Features
 
-- Show anime titles in multiple languages
-- Telegram group support
+- Show anime titles, episode, and timestamp from trace.moe
 - Image, GIF, Video, Stickers, URL support
 - Video preview
+- Supported Languages: English, Chinese, Japanese
+- Telegram group support
+- Guest Mode support
 
 ## How to use
 
@@ -29,11 +31,11 @@ https://user-images.githubusercontent.com/1979746/126060529-8a33523a-967b-48de-9
 
 ## How to use (in group)
 
-1. Add the bot `@WhatAnimeBot` to your group
-2. Reply to any group image, mention the bot with `@WhatAnimeBot`
-3. Wait for the bot to reply
+1. In a group, reply to an anime screenshot and mention the bot with `@WhatAnimeBot`
+2. The bot will reply with the anime information
+3. (Optional) If you want auto-complete when typing `@WhatAnimeBot`, you can add the bot to your group
 
-_Note that the bot has no access to your messages before it is added to your group_
+> **Note**: The bot will have access to your group messages when it is added to your group.
 
 ## How to host the bot on your own
 
