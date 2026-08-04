@@ -63,6 +63,7 @@ TELEGRAM_WEBHOOK=     # e.g. https://your.host.com/
 PORT=                 # (optional) Default: 3000
 ADDR=                 # (optional) Default: 0.0.0.0
 TRACE_MOE_KEY=        # (optional)
+FILTER_ADULT=         # (optional) Default: true
 ```
 
 ### Host with docker

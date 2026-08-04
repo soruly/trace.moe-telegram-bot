@@ -1,5 +1,6 @@
 import type { Message } from "@effect-ak/tg-bot-api";
 
+import { FILTER_ADULT } from "./config.ts";
 import { getTranslation } from "./i18n.ts";
 import {
   botName,
@@ -135,7 +136,7 @@ export const groupMessageHandler = async (message: Message) => {
     return result;
   });
 
-  if (result.isAdult) {
+  if (FILTER_ADULT && result.isAdult) {
     await sendMessage({
       chat_id: message.chat.id,
       text: getTranslation(langCode, "adultResult"),
@@ -201,7 +202,7 @@ export const guestMessageHandler = async (message: Message) => {
     return result;
   });
 
-  if (result.isAdult) {
+  if (FILTER_ADULT && result.isAdult) {
     await answerGuestQuery({
       guest_query_id: message?.guest_query_id,
       result: {
