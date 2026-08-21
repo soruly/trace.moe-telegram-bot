@@ -36,6 +36,8 @@ export interface SearchResult {
   text: string;
   video?: string;
   image?: string;
+  similarity?: number;
+  lowSimilarity?: boolean;
 }
 
 export interface SearchOptions {
@@ -100,9 +102,6 @@ export const submitSearch = async (
   }
   const { anilist, similarity, filename, from, to, video, image }: APISearchResult =
     searchResult.result[0];
-  if (similarity < 0.8) {
-    return { text: getTranslation(langCode, "apiNoResults") };
-  }
   const { title: { chinese, english, native, romaji } = {}, isAdult } = anilist ?? {};
   const code = langCode ? langCode.toLowerCase() : "en";
   const isEn = code.startsWith("en");
@@ -136,5 +135,7 @@ export const submitSearch = async (
     text,
     video: url.toString(),
     image: image,
+    similarity,
+    lowSimilarity: similarity < 0.8,
   };
 };

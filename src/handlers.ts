@@ -1,4 +1,6 @@
-import type { Message } from "@effect-ak/tg-bot-api";
+import crypto from "node:crypto";
+
+import type { CallbackQuery, Message } from "@effect-ak/tg-bot-api";
 
 import { FILTER_ADULT } from "./config.ts";
 import { getTranslation } from "./i18n.ts";
@@ -9,10 +11,26 @@ import {
   setMessageReaction,
   sendVideo,
   answerGuestQuery,
+  answerCallbackQuery,
+  editMessageReplyMarkup,
   getImageFromMessage,
 } from "./telegram.ts";
-import { submitSearch, type SearchOptions } from "./tracemoe.ts";
+import { submitSearch, type SearchOptions, type SearchResult } from "./tracemoe.ts";
 import { getHelpMessage, escapeMarkdownV2, enqueueUserTask } from "./utils.ts";
+
+interface CachedLowSimilarityResult {
+  result: SearchResult;
+  searchOpts: SearchOptions;
+  chatId: number | string;
+  messageId: number;
+  replyMsgId: number;
+  hasSpoiler?: boolean;
+  isGroup?: boolean;
+  langCode?: string;
+  timeoutId: NodeJS.Timeout;
+}
+
+const lowSimilarityCache = new Map<string, CachedLowSimilarityResult>();
 
 export const getSearchOpts = (message: Message): SearchOptions => {
   const text = message.text?.toLowerCase() ?? "";
@@ -22,6 +40,78 @@ export const getSearchOpts = (message: Message): SearchOptions => {
     noCrop: text.includes("nocrop") || caption.includes("nocrop"),
     skip: text.includes("skip") || caption.includes("skip"),
   };
+};
+
+export const callbackQueryHandler = async (callbackQuery: CallbackQuery) => {
+  const data = callbackQuery.data ?? "";
+  if (!data.startsWith("low_sim:")) {
+    return;
+  }
+  const id = data.substring("low_sim:".length);
+  const cached = lowSimilarityCache.get(id);
+
+  if (!cached) {
+    await answerCallbackQuery({
+      callback_query_id: callbackQuery.id,
+      text: getTranslation(callbackQuery.from?.language_code, "resultExpired"),
+      show_alert: true,
+    });
+    if (callbackQuery.message?.chat?.id && callbackQuery.message?.message_id) {
+      await editMessageReplyMarkup({
+        chat_id: callbackQuery.message.chat.id,
+        message_id: callbackQuery.message.message_id,
+        reply_markup: { inline_keyboard: [] },
+      }).catch(() => {});
+    }
+    return;
+  }
+
+  clearTimeout(cached.timeoutId);
+  lowSimilarityCache.delete(id);
+
+  await answerCallbackQuery({ callback_query_id: callbackQuery.id });
+
+  await editMessageReplyMarkup({
+    chat_id: cached.chatId,
+    message_id: cached.messageId,
+    reply_markup: { inline_keyboard: [] },
+  }).catch((e) => console.error("Failed to remove inline button on click:", e));
+
+  const { result, searchOpts, chatId, replyMsgId, hasSpoiler, isGroup, langCode } = cached;
+
+  if (isGroup && FILTER_ADULT && result.isAdult) {
+    await sendMessage({
+      chat_id: chatId,
+      text: getTranslation(langCode, "adultResult"),
+      reply_parameters: { message_id: replyMsgId },
+    });
+    return;
+  }
+
+  if (result.video && !searchOpts.skip) {
+    const videoLink = searchOpts.mute ? `${result.video}&mute` : result.video;
+    const video = await fetch(videoLink, { method: "HEAD" });
+    if (video.ok && Number(video.headers.get("content-length")) > 0) {
+      await sendVideo({
+        chat_id: chatId,
+        video: videoLink,
+        caption: escapeMarkdownV2(result.text),
+        has_spoiler: hasSpoiler,
+        parse_mode: "MarkdownV2",
+        reply_parameters: {
+          message_id: replyMsgId,
+        },
+      });
+      return;
+    }
+  }
+
+  await sendMessage({
+    chat_id: chatId,
+    text: escapeMarkdownV2(result.text),
+    parse_mode: "MarkdownV2",
+    reply_parameters: { message_id: replyMsgId },
+  });
 };
 
 export const privateMessageHandler = async (message: Message) => {
@@ -65,6 +155,51 @@ export const privateMessageHandler = async (message: Message) => {
     });
     return result;
   });
+
+  if (result.lowSimilarity) {
+    const id = crypto.randomBytes(16).toString("hex");
+    const sentMsg = await sendMessage({
+      chat_id: message.chat.id,
+      text: escapeMarkdownV2(getTranslation(langCode, "apiNoResults")),
+      parse_mode: "MarkdownV2",
+      reply_parameters: { message_id: reply_msg_id },
+      reply_markup: {
+        inline_keyboard: [
+          [
+            {
+              text: getTranslation(langCode, "showLowSimilarityResult"),
+              callback_data: `low_sim:${id}`,
+            },
+          ],
+        ],
+      },
+    });
+
+    if (sentMsg?.message_id) {
+      const timeoutId = setTimeout(
+        () => {
+          lowSimilarityCache.delete(id);
+          editMessageReplyMarkup({
+            chat_id: message.chat.id,
+            message_id: sentMsg.message_id,
+            reply_markup: { inline_keyboard: [] },
+          }).catch((e) => console.error("Failed to remove expired inline button:", e));
+        },
+        5 * 60 * 1000,
+      );
+
+      lowSimilarityCache.set(id, {
+        result,
+        searchOpts,
+        chatId: message.chat.id,
+        messageId: sentMsg.message_id,
+        replyMsgId: reply_msg_id,
+        langCode,
+        timeoutId,
+      });
+    }
+    return;
+  }
 
   if (result.video && !searchOpts.skip) {
     const videoLink = searchOpts.mute ? `${result.video}&mute` : result.video;
@@ -136,6 +271,53 @@ export const groupMessageHandler = async (message: Message) => {
     return result;
   });
 
+  if (result.lowSimilarity) {
+    const id = crypto.randomBytes(16).toString("hex");
+    const sentMsg = await sendMessage({
+      chat_id: message.chat.id,
+      text: escapeMarkdownV2(getTranslation(langCode, "apiNoResults")),
+      parse_mode: "MarkdownV2",
+      reply_parameters: { message_id: reply_msg_id },
+      reply_markup: {
+        inline_keyboard: [
+          [
+            {
+              text: getTranslation(langCode, "showLowSimilarityResult"),
+              callback_data: `low_sim:${id}`,
+            },
+          ],
+        ],
+      },
+    });
+
+    if (sentMsg?.message_id) {
+      const timeoutId = setTimeout(
+        () => {
+          lowSimilarityCache.delete(id);
+          editMessageReplyMarkup({
+            chat_id: message.chat.id,
+            message_id: sentMsg.message_id,
+            reply_markup: { inline_keyboard: [] },
+          }).catch((e) => console.error("Failed to remove expired inline button:", e));
+        },
+        5 * 60 * 1000,
+      );
+
+      lowSimilarityCache.set(id, {
+        result,
+        searchOpts,
+        chatId: message.chat.id,
+        messageId: sentMsg.message_id,
+        replyMsgId: reply_msg_id,
+        hasSpoiler: responding_msg.has_media_spoiler,
+        isGroup: true,
+        langCode,
+        timeoutId,
+      });
+    }
+    return;
+  }
+
   if (FILTER_ADULT && result.isAdult) {
     await sendMessage({
       chat_id: message.chat.id,
@@ -201,6 +383,22 @@ export const guestMessageHandler = async (message: Message) => {
     const result = await submitSearch(imageURL, userId, searchOpts, langCode);
     return result;
   });
+
+  if (result.lowSimilarity) {
+    await answerGuestQuery({
+      guest_query_id: message?.guest_query_id,
+      result: {
+        type: "article",
+        id: message?.guest_query_id,
+        title: "placeholder",
+        input_message_content: {
+          message_text: escapeMarkdownV2(getTranslation(langCode, "apiNoResults")),
+          parse_mode: "MarkdownV2",
+        },
+      },
+    });
+    return;
+  }
 
   if (FILTER_ADULT && result.isAdult) {
     await answerGuestQuery({

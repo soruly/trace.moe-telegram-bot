@@ -14,6 +14,8 @@ export interface LocaleStrings {
   welcomePrivate: string;
   welcomeGroup: string;
   adultResult: string;
+  showLowSimilarityResult: string;
+  resultExpired: string;
 }
 
 export const defaultLocale: LocaleStrings = {
@@ -33,6 +35,8 @@ export const defaultLocale: LocaleStrings = {
   welcomePrivate: "You can Send or Forward anime screenshots to me",
   welcomeGroup: "Mention me in an anime screenshot, I will tell you what anime is that",
   adultResult: "I've found an adult result 😳\nPlease forward it to me via Private Chat 😏",
+  showLowSimilarityResult: "Show low similarity result",
+  resultExpired: "This result has expired.",
 };
 
 const zhHansLocale: LocaleStrings = {
@@ -52,6 +56,8 @@ const zhHansLocale: LocaleStrings = {
   welcomePrivate: "您可以发送或转发动漫截图给我",
   welcomeGroup: "在动漫截图中提及我，我会告诉您那是哪部动漫",
   adultResult: "我找到了一个成人内容结果 😳\n请通过私聊转发给我 😏",
+  showLowSimilarityResult: "显示低相似度结果",
+  resultExpired: "此结果已过期。",
 };
 
 const zhHantLocale: LocaleStrings = {
@@ -71,6 +77,8 @@ const zhHantLocale: LocaleStrings = {
   welcomePrivate: "您可以發送或轉發動漫截圖給我",
   welcomeGroup: "在動漫截圖中提及我，我會告訴您那是哪部動漫",
   adultResult: "我找到了一個成人內容結果 😳\n請通過私聊轉發給我 😏",
+  showLowSimilarityResult: "顯示低相似度結果",
+  resultExpired: "此結果已過期。",
 };
 
 const jaLocale: LocaleStrings = {
@@ -90,6 +98,8 @@ const jaLocale: LocaleStrings = {
   welcomePrivate: "アニメのスクリーンショットを送信または転送してください",
   welcomeGroup: "アニメのスクリーンショットで私をメンションすると、どのアニメかお答えします",
   adultResult: "成人向けの結果が見つかりました 😳\nプライベートチャットで転送してください 😏",
+  showLowSimilarityResult: "類似度の低い結果を表示",
+  resultExpired: "この結果は有効期限が切れました。",
 };
 
 export const locales: Record<string, Partial<LocaleStrings>> = {

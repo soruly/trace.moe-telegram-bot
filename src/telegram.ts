@@ -4,6 +4,8 @@ import type {
   SendVideoInput,
   SetMessageReactionInput,
   AnswerGuestQueryInput,
+  AnswerCallbackQueryInput,
+  EditMessageReplyMarkupInput,
   Message,
   PhotoSize,
   ExternalReplyInfo,
@@ -57,6 +59,24 @@ export const sendVideo = (payload: SendVideoInput) =>
 
 export const answerGuestQuery = (payload: AnswerGuestQueryInput) =>
   fetch(`${TELEGRAM_API}/bot${TELEGRAM_TOKEN}/answerGuestQuery`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  })
+    .then((e) => e.json())
+    .then((e) => e.result);
+
+export const answerCallbackQuery = (payload: AnswerCallbackQueryInput) =>
+  fetch(`${TELEGRAM_API}/bot${TELEGRAM_TOKEN}/answerCallbackQuery`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  })
+    .then((e) => e.json())
+    .then((e) => e.result);
+
+export const editMessageReplyMarkup = (payload: EditMessageReplyMarkupInput) =>
+  fetch(`${TELEGRAM_API}/bot${TELEGRAM_TOKEN}/editMessageReplyMarkup`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),

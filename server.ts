@@ -4,7 +4,12 @@ import http from "node:http";
 import type { Message } from "@effect-ak/tg-bot-api";
 
 import { PORT, ADDR, TELEGRAM_TOKEN, TELEGRAM_WEBHOOK, TELEGRAM_API } from "./src/config.ts";
-import { privateMessageHandler, groupMessageHandler, guestMessageHandler } from "./src/handlers.ts";
+import {
+  privateMessageHandler,
+  groupMessageHandler,
+  guestMessageHandler,
+  callbackQueryHandler,
+} from "./src/handlers.ts";
 import { getTranslation, locales } from "./src/i18n.ts";
 import {
   botName,
@@ -20,8 +25,14 @@ console.log(`Use trace.moe API: ${process.env.TRACE_MOE_KEY ? "with" : "without"
 console.log("Setting Telegram webhook...");
 
 const SECRET_TOKEN = crypto.randomBytes(32).toString("hex");
+const allowedUpdates = JSON.stringify([
+  "message",
+  "edited_message",
+  "guest_message",
+  "callback_query",
+]);
 await fetch(
-  `${TELEGRAM_API}/bot${TELEGRAM_TOKEN}/setWebhook?url=${TELEGRAM_WEBHOOK}&max_connections=100&allowed_updates=%5B%22message%22%2C%22edited_message%22%2C%22guest_message%22%5D&secret_token=${SECRET_TOKEN}`,
+  `${TELEGRAM_API}/bot${TELEGRAM_TOKEN}/setWebhook?url=${TELEGRAM_WEBHOOK}&max_connections=100&allowed_updates=${encodeURIComponent(allowedUpdates)}&secret_token=${SECRET_TOKEN}`,
 )
   .then((e) => e.json())
   .then((e) => {
@@ -77,24 +88,28 @@ const server = http.createServer({ keepAliveTimeout: 60000 }, async (req, res) =
     }
     try {
       const request = JSON.parse(await getBody(req));
-      const message: Message = request.message ?? request.edited_message ?? request.guest_message;
-      if (message?.guest_query_id && messageIsMentioningBot(message)) {
-        await guestMessageHandler(message);
-      } else if (message?.chat?.type === "private") {
-        await privateMessageHandler(message);
-        setMessageReaction({
-          chat_id: message.chat.id,
-          message_id: message.message_id,
-          reaction: [],
-        });
-      } else if (message?.chat?.type === "group" || message?.chat?.type === "supergroup") {
-        if (messageIsMentioningBot(message)) {
-          await groupMessageHandler(message);
+      if (request.callback_query) {
+        await callbackQueryHandler(request.callback_query);
+      } else {
+        const message: Message = request.message ?? request.edited_message ?? request.guest_message;
+        if (message?.guest_query_id && messageIsMentioningBot(message)) {
+          await guestMessageHandler(message);
+        } else if (message?.chat?.type === "private") {
+          await privateMessageHandler(message);
           setMessageReaction({
             chat_id: message.chat.id,
             message_id: message.message_id,
             reaction: [],
           });
+        } else if (message?.chat?.type === "group" || message?.chat?.type === "supergroup") {
+          if (messageIsMentioningBot(message)) {
+            await groupMessageHandler(message);
+            setMessageReaction({
+              chat_id: message.chat.id,
+              message_id: message.message_id,
+              reaction: [],
+            });
+          }
         }
       }
       return res.writeHead(204).end();
