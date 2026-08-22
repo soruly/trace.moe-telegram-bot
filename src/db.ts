@@ -3,6 +3,10 @@ import sqlite from "node:sqlite";
 export const database = new sqlite.DatabaseSync(".db");
 
 database.exec(`
+CREATE TABLE IF NOT EXISTS users (
+  id INTEGER PRIMARY KEY,
+  lang_code TEXT
+);
 CREATE TABLE IF NOT EXISTS logs (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   created TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -34,3 +38,21 @@ export const select = database.prepare(
 export const insert = database.prepare(
   "INSERT INTO logs (user_id, code, lang_code) VALUES ($user_id, $code, $lang_code)",
 );
+
+export const selectUser = database.prepare("SELECT lang_code FROM users WHERE id = $id");
+
+export const upsertUser = database.prepare(`
+  INSERT INTO users (id, lang_code) VALUES ($id, $lang_code)
+  ON CONFLICT(id) DO UPDATE SET lang_code = excluded.lang_code
+`);
+
+export const getUserLang = (userId: number): string | null => {
+  if (!userId) return null;
+  const row = selectUser.get({ $id: userId }) as { lang_code: string | null } | undefined;
+  return row?.lang_code ?? null;
+};
+
+export const setUserLang = (userId: number, langCode: string | null): void => {
+  if (!userId) return;
+  upsertUser.run({ $id: userId, $lang_code: langCode });
+};

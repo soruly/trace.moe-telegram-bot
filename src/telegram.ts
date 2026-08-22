@@ -6,6 +6,7 @@ import type {
   AnswerGuestQueryInput,
   AnswerCallbackQueryInput,
   EditMessageReplyMarkupInput,
+  EditMessageTextInput,
   Message,
   PhotoSize,
   ExternalReplyInfo,
@@ -77,6 +78,15 @@ export const answerCallbackQuery = (payload: AnswerCallbackQueryInput) =>
 
 export const editMessageReplyMarkup = (payload: EditMessageReplyMarkupInput) =>
   fetch(`${TELEGRAM_API}/bot${TELEGRAM_TOKEN}/editMessageReplyMarkup`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  })
+    .then((e) => e.json())
+    .then((e) => e.result);
+
+export const editMessageText = (payload: EditMessageTextInput) =>
+  fetch(`${TELEGRAM_API}/bot${TELEGRAM_TOKEN}/editMessageText`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),

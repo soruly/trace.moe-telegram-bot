@@ -2,7 +2,7 @@ import child_process from "node:child_process";
 
 import packageConfig from "../package.json" with { type: "json" };
 import { TRACE_MOE_KEY } from "./config.ts";
-import { select } from "./db.ts";
+import { select, getUserLang } from "./db.ts";
 import { getTranslation, getMappedLocale } from "./i18n.ts";
 
 let REVISION: string;
@@ -17,17 +17,22 @@ export { REVISION };
 export const getHelpMessage = async (botName: string, fromId: number, langCode?: string) => {
   const countObj = select.get({ $user_id: fromId }) as { count: number } | undefined;
   const count = countObj ? countObj.count : 0;
+  const userPreference = getUserLang(fromId);
+  const effectiveLang = userPreference ?? langCode;
   return [
-    getTranslation(langCode, "helpBotName", { botName: botName ? `@${botName}` : "(unknown)" }),
-    getTranslation(langCode, "helpRevision", { revision: REVISION.substring(0, 7) }),
-    getTranslation(langCode, "helpApiKey", { hasKey: TRACE_MOE_KEY ? "true" : "false" }),
-    getTranslation(langCode, "helpHomepage", { homepage: packageConfig.homepage ?? "" }),
-    getTranslation(langCode, "helpSearchCount", { count }),
-    getTranslation(langCode, "helpLanguage", {
-      langCode: langCode ?? "(none)",
-      locale: getMappedLocale(langCode),
+    getTranslation(effectiveLang, "helpBotName", {
+      botName: botName ? `@${botName}` : "(unknown)",
     }),
-    getTranslation(langCode, "helpOptions"),
+    getTranslation(effectiveLang, "helpRevision", { revision: REVISION.substring(0, 7) }),
+    getTranslation(effectiveLang, "helpApiKey", { hasKey: TRACE_MOE_KEY ? "true" : "false" }),
+    getTranslation(effectiveLang, "helpHomepage", { homepage: packageConfig.homepage ?? "" }),
+    getTranslation(effectiveLang, "helpSearchCount", { count }),
+    getTranslation(effectiveLang, "helpLanguage", {
+      language: userPreference
+        ? `\`${userPreference}\``
+        : `\`${langCode ?? "(none)"}\` → \`${getMappedLocale(langCode)}\``,
+    }),
+    getTranslation(effectiveLang, "helpOptions"),
   ]
     .filter((e) => e)
     .join("\n");

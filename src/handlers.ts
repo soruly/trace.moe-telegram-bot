@@ -3,6 +3,7 @@ import crypto from "node:crypto";
 import type { CallbackQuery, Message } from "@effect-ak/tg-bot-api";
 
 import { FILTER_ADULT } from "./config.ts";
+import { getUserLang, setUserLang } from "./db.ts";
 import { getTranslation } from "./i18n.ts";
 import {
   botName,
@@ -13,6 +14,7 @@ import {
   answerGuestQuery,
   answerCallbackQuery,
   editMessageReplyMarkup,
+  editMessageText,
   getImageFromMessage,
 } from "./telegram.ts";
 import { submitSearch, type SearchOptions, type SearchResult } from "./tracemoe.ts";
@@ -32,6 +34,20 @@ interface CachedLowSimilarityResult {
 
 const lowSimilarityCache = new Map<string, CachedLowSimilarityResult>();
 
+export const languageSelectionKeyboard = {
+  inline_keyboard: [
+    [
+      { text: "English", callback_data: "set_lang:en" },
+      { text: "日本語", callback_data: "set_lang:ja" },
+    ],
+    [
+      { text: "繁體中文", callback_data: "set_lang:zh-hant" },
+      { text: "简体中文", callback_data: "set_lang:zh-hans" },
+    ],
+    [{ text: "🌐 Auto", callback_data: "set_lang:auto" }],
+  ],
+};
+
 export const getSearchOpts = (message: Message): SearchOptions => {
   const text = message.text?.toLowerCase() ?? "";
   const caption = message.caption?.toLowerCase() ?? "";
@@ -44,6 +60,45 @@ export const getSearchOpts = (message: Message): SearchOptions => {
 
 export const callbackQueryHandler = async (callbackQuery: CallbackQuery) => {
   const data = callbackQuery.data ?? "";
+  const userId = callbackQuery.from?.id ?? 0;
+
+  if (data.startsWith("set_lang:")) {
+    const selected = data.substring("set_lang:".length);
+    const newLang = selected === "auto" ? null : selected;
+    setUserLang(userId, newLang);
+    const effectiveLang = newLang ?? callbackQuery.from?.language_code;
+
+    const langNameMap: Record<string, string> = {
+      en: "English",
+      "zh-hant": "繁體中文",
+      "zh-hans": "简体中文",
+      ja: "日本語",
+      auto: "Auto",
+    };
+    const langDisplay = langNameMap[selected] ?? selected;
+    const text = getTranslation(effectiveLang, "languageSet", { language: langDisplay });
+
+    await answerCallbackQuery({
+      callback_query_id: callbackQuery.id,
+      text,
+    });
+
+    if (callbackQuery.message?.chat?.id && callbackQuery.message?.message_id) {
+      await editMessageText({
+        chat_id: callbackQuery.message.chat.id,
+        message_id: callbackQuery.message.message_id,
+        text,
+      }).catch(async () => {
+        await editMessageReplyMarkup({
+          chat_id: callbackQuery.message!.chat.id,
+          message_id: callbackQuery.message!.message_id,
+          reply_markup: { inline_keyboard: [] },
+        }).catch(() => {});
+      });
+    }
+    return;
+  }
+
   if (!data.startsWith("low_sim:")) {
     return;
   }
@@ -51,9 +106,10 @@ export const callbackQueryHandler = async (callbackQuery: CallbackQuery) => {
   const cached = lowSimilarityCache.get(id);
 
   if (!cached) {
+    const langCode = getUserLang(userId) ?? callbackQuery.from?.language_code;
     await answerCallbackQuery({
       callback_query_id: callbackQuery.id,
-      text: getTranslation(callbackQuery.from?.language_code, "resultExpired"),
+      text: getTranslation(langCode, "resultExpired"),
       show_alert: true,
     });
     if (callbackQuery.message?.chat?.id && callbackQuery.message?.message_id) {
@@ -116,7 +172,7 @@ export const callbackQueryHandler = async (callbackQuery: CallbackQuery) => {
 
 export const privateMessageHandler = async (message: Message) => {
   const userId = message.from?.id ?? 0;
-  const langCode = message.from?.language_code;
+  const langCode = getUserLang(userId) ?? message.from?.language_code;
   const searchOpts = getSearchOpts(message);
   const responding_msg = message.reply_to_message
     ? message.reply_to_message
@@ -126,12 +182,20 @@ export const privateMessageHandler = async (message: Message) => {
   const reply_msg_id = message.external_reply ? message.message_id : responding_msg.message_id;
   const imageURL = await getImageFromMessage(responding_msg);
   if (!imageURL) {
-    if ((message.text ?? message.caption)?.toLowerCase().includes("/help")) {
+    const text = (message.text ?? message.caption)?.toLowerCase() ?? "";
+    if (text.includes("/help")) {
       return await sendMessage({
         chat_id: message.chat.id,
-        text: escapeMarkdownV2(await getHelpMessage(botName, userId, langCode)),
+        text: escapeMarkdownV2(await getHelpMessage(botName, userId, message.from?.language_code)),
         parse_mode: "MarkdownV2",
         link_preview_options: { is_disabled: true },
+      });
+    }
+    if (text.includes("/lang") || text.includes("/setlang")) {
+      return await sendMessage({
+        chat_id: message.chat.id,
+        text: getTranslation(langCode, "selectLanguage"),
+        reply_markup: languageSelectionKeyboard,
       });
     }
     return await sendMessage({
@@ -228,7 +292,7 @@ export const privateMessageHandler = async (message: Message) => {
 
 export const groupMessageHandler = async (message: Message) => {
   const userId = message.from?.id ?? 0;
-  const langCode = message.from?.language_code;
+  const langCode = getUserLang(userId) ?? message.from?.language_code;
   const searchOpts = getSearchOpts(message);
   const responding_msg = message.reply_to_message
     ? message.reply_to_message
@@ -238,13 +302,22 @@ export const groupMessageHandler = async (message: Message) => {
   const reply_msg_id = message.external_reply ? message.message_id : responding_msg.message_id;
   const imageURL = await getImageFromMessage(responding_msg);
   if (!imageURL) {
-    if ((message.text ?? message.caption)?.toLowerCase().includes("/help")) {
+    const text = (message.text ?? message.caption)?.toLowerCase() ?? "";
+    if (text.includes("/help")) {
       return await sendMessage({
         chat_id: message.chat.id,
-        text: escapeMarkdownV2(await getHelpMessage(botName, userId, langCode)),
+        text: escapeMarkdownV2(await getHelpMessage(botName, userId, message.from?.language_code)),
         parse_mode: "MarkdownV2",
         reply_parameters: { message_id: message.message_id },
         link_preview_options: { is_disabled: true },
+      });
+    }
+    if (text.includes("/lang") || text.includes("/setlang")) {
+      return await sendMessage({
+        chat_id: message.chat.id,
+        text: getTranslation(langCode, "selectLanguage"),
+        reply_parameters: { message_id: message.message_id },
+        reply_markup: languageSelectionKeyboard,
       });
     }
     // cannot find image from the message mentioning the bot
@@ -355,7 +428,7 @@ export const groupMessageHandler = async (message: Message) => {
 
 export const guestMessageHandler = async (message: Message) => {
   const userId = message.from?.id ?? 0;
-  const langCode = message.from?.language_code;
+  const langCode = getUserLang(userId) ?? message.from?.language_code;
   const searchOpts = getSearchOpts(message);
   const responding_msg = message.reply_to_message
     ? message.reply_to_message

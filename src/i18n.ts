@@ -7,6 +7,9 @@ export interface LocaleStrings {
   helpLanguage: string;
   helpOptions: string;
   helpCommandDescription: string;
+  langCommandDescription: string;
+  selectLanguage: string;
+  languageSet: string;
   apiError: string;
   apiBusy: string;
   apiLimitExceeded: string;
@@ -24,10 +27,13 @@ export const defaultLocale: LocaleStrings = {
   helpApiKey: "Use trace.moe with API Key? `{hasKey}`",
   helpHomepage: "Homepage: {homepage}",
   helpSearchCount: "Your search count (last 30 days): {count}",
-  helpLanguage: "Language: `{langCode}` -> `{locale}`",
+  helpLanguage: "Language: {language}",
   helpOptions:
     "Options: include 'mute' (mute video), 'nocrop' (disable auto-crop), or 'skip' (skip video preview) in text or caption",
   helpCommandDescription: "Get help and info on how to use trace.moe bot",
+  langCommandDescription: "Change preferred language",
+  selectLanguage: "Please select your preferred language:",
+  languageSet: "Language set to {language}",
   apiError: "`trace.moe API error, please try again later.`",
   apiBusy: "`trace.moe server is busy, please try again later.`",
   apiLimitExceeded: "`You exceeded the search limit, please try again later`",
@@ -45,10 +51,13 @@ const zhHansLocale: LocaleStrings = {
   helpApiKey: "是否使用 trace.moe API Key? `{hasKey}`",
   helpHomepage: "主页: {homepage}",
   helpSearchCount: "您最近 30 天的搜索次数: {count}",
-  helpLanguage: "语言: `{langCode}` -> `{locale}`",
+  helpLanguage: "语言: {language}",
   helpOptions:
     "选项：在消息或附言中包含 'mute' (静音视频)，'nocrop' (禁用自动裁剪)，或 'skip' (跳过视频预览)",
   helpCommandDescription: "获取帮助和 trace.moe 机器人使用说明",
+  langCommandDescription: "更改首选语言",
+  selectLanguage: "请选择您的首选语言：",
+  languageSet: "语言已设置为 {language}",
   apiError: "`trace.moe API 错误，请稍后再试。`",
   apiBusy: "`trace.moe 服务器繁忙，请稍后再试。`",
   apiLimitExceeded: "`您已超出搜索限制，请稍后再试`",
@@ -66,10 +75,13 @@ const zhHantLocale: LocaleStrings = {
   helpApiKey: "是否使用 trace.moe API Key? `{hasKey}`",
   helpHomepage: "主頁: {homepage}",
   helpSearchCount: "您最近 30 天的搜尋次數: {count}",
-  helpLanguage: "語言: `{langCode}` -> `{locale}`",
+  helpLanguage: "語言: {language}",
   helpOptions:
     "選項：在訊息或附言中包含 'mute' (靜音影片)，'nocrop' (禁用自動裁剪)，或 'skip' (跳過影片預覽)",
   helpCommandDescription: "獲取幫助和 trace.moe 機器人使用說明",
+  langCommandDescription: "更改偏好語言",
+  selectLanguage: "請選擇您的偏好語言：",
+  languageSet: "語言已設定為 {language}",
   apiError: "`trace.moe API 錯誤，請稍後再試。`",
   apiBusy: "`trace.moe 伺服器繁忙，請稍後再試。`",
   apiLimitExceeded: "`您已超出搜尋限制，請稍後再試`",
@@ -87,10 +99,13 @@ const jaLocale: LocaleStrings = {
   helpApiKey: "trace.moe APIキーを使用中? `{hasKey}`",
   helpHomepage: "ホームページ: {homepage}",
   helpSearchCount: "検索回数 (過去30日間): {count}",
-  helpLanguage: "言語: `{langCode}` -> `{locale}`",
+  helpLanguage: "言語: {language}",
   helpOptions:
     "オプション：メッセージまたはキャプションに 'mute' (消音)、'nocrop' (自動クロップ無効)、または 'skip' (動画プレビュー省略) を含める",
   helpCommandDescription: "ヘルプと trace.moe ボットの使い方を表示",
+  langCommandDescription: "優先言語を変更",
+  selectLanguage: "優先する言語を選択してください：",
+  languageSet: "言語を {language} に設定しました",
   apiError: "`trace.moe APIエラーが発生しました。時間をおいてもう一度お試しください。`",
   apiBusy: "`trace.moe サーバーが混雑しています。時間をおいてもう一度お試しください。`",
   apiLimitExceeded: "`検索制限を超過しました。時間をおいてもう一度お試しください`",

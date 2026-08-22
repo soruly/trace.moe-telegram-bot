@@ -43,6 +43,7 @@ for (const langCode of Object.keys(locales)) {
   setMyCommands({
     commands: [
       { command: "help", description: getTranslation(langCode, "helpCommandDescription") },
+      { command: "lang", description: getTranslation(langCode, "langCommandDescription") },
     ],
     language_code: langCode,
   }).catch((err) => {
