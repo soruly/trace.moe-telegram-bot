@@ -73,7 +73,11 @@ export const submitSearch = async (
       trial = 0;
       return { text: getTranslation(langCode, "apiError") };
     }
-    insert.run({ $user_id: userId, $code: response.status });
+    insert.run({
+      $user_id: userId,
+      $code: response.status,
+      $lang_code: langCode ?? null,
+    });
     if (response.status === 503 || response.status === 402) {
       await new Promise((resolve) => setTimeout(resolve, Math.floor(Math.random() * 4000) + 1000));
     } else trial = 0;

@@ -107,7 +107,7 @@ export const locales: Record<string, Partial<LocaleStrings>> = {
   "zh-hans": zhHansLocale,
   "zh-cn": zhHansLocale,
   "zh-sg": zhHansLocale,
-  zh: zhHansLocale,
+  zh: zhHantLocale,
   "zh-hant": zhHantLocale,
   "zh-tw": zhHantLocale,
   "zh-hk": zhHantLocale,
