@@ -17,7 +17,7 @@ https://user-images.githubusercontent.com/1979746/126060529-8a33523a-967b-48de-9
 - Show anime titles, episode, and timestamp from trace.moe
 - Image, GIF, Video, Stickers, URL support
 - Video preview
-- Supported Languages: English, Chinese, Japanese
+- Supported Languages: English, Japanese, Chinese (Simplified & Traditional)
 - Telegram group support
 - Guest Mode support
 
@@ -38,6 +38,11 @@ When sending or replying with an image, you can include optional keywords in you
 - `skip`: Skips generating the preview video and returns only the text search result.
 
 Example: `@WhatAnimeBot mute nocrop` or captioning an image with `skip`.
+
+### Bot Commands
+
+- `/help`: Get help and info on how to use the bot
+- `/lang` or `/setlang`: Change preferred language (English, 日本語, 繁體中文, 简体中文, or Auto)
 
 ## How to use (in group)
 
@@ -95,7 +100,7 @@ npm install
 - Edit `.env` as you need
 
 ```
-node server.ts
+npm start
 ```
 
 ### Run as systemd
