@@ -1,7 +1,6 @@
 import child_process from "node:child_process";
 
 import packageConfig from "../package.json" with { type: "json" };
-import { TRACE_MOE_KEY } from "./config.ts";
 import { select, getUserLang } from "./db.ts";
 import { getTranslation, getMappedLocale } from "./i18n.ts";
 
@@ -24,7 +23,6 @@ export const getHelpMessage = async (botName: string, fromId: number, langCode?:
       botName: botName ? `@${botName}` : "(unknown)",
     }),
     getTranslation(effectiveLang, "helpRevision", { revision: REVISION.substring(0, 7) }),
-    getTranslation(effectiveLang, "helpApiKey", { hasKey: TRACE_MOE_KEY ? "true" : "false" }),
     getTranslation(effectiveLang, "helpHomepage", { homepage: packageConfig.homepage ?? "" }),
     getTranslation(effectiveLang, "helpSearchCount", { count }),
     getTranslation(effectiveLang, "helpLanguage", {
@@ -32,10 +30,9 @@ export const getHelpMessage = async (botName: string, fromId: number, langCode?:
         ? `\`${userPreference}\``
         : `\`${langCode ?? "(none)"}\` → \`${getMappedLocale(langCode)}\``,
     }),
+    "",
     getTranslation(effectiveLang, "helpOptions"),
-  ]
-    .filter((e) => e)
-    .join("\n");
+  ].join("\n");
 };
 
 export const escapeMarkdownV2 = (text: string) =>

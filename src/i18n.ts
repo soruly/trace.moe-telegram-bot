@@ -1,7 +1,6 @@
 export interface LocaleStrings {
   helpBotName: string;
   helpRevision: string;
-  helpApiKey: string;
   helpHomepage: string;
   helpSearchCount: string;
   helpLanguage: string;
@@ -24,12 +23,14 @@ export interface LocaleStrings {
 export const defaultLocale: LocaleStrings = {
   helpBotName: "Bot Name: {botName}",
   helpRevision: "Revision: `{revision}`",
-  helpApiKey: "Use trace.moe with API Key? `{hasKey}`",
   helpHomepage: "Homepage: {homepage}",
-  helpSearchCount: "Your search count (last 30 days): {count}",
+  helpSearchCount: "Your search count (last 30 days): `{count}`",
   helpLanguage: "Language: {language}",
   helpOptions:
-    "Options: include 'mute' (mute video), 'nocrop' (disable auto-crop), or 'skip' (skip video preview) in text or caption",
+    "You can include these keyword in caption:\n" +
+    "  `mute` → mute video (as GIF)\n" +
+    "  `nocrop` → disable auto black-border crop\n" +
+    "  `skip` → only return text, without video preview",
   helpCommandDescription: "Get help and info on how to use trace.moe bot",
   langCommandDescription: "Change preferred language",
   selectLanguage: "Please select your preferred language:",
@@ -48,12 +49,14 @@ export const defaultLocale: LocaleStrings = {
 const zhHansLocale: LocaleStrings = {
   helpBotName: "机器人名称: {botName}",
   helpRevision: "版本: `{revision}`",
-  helpApiKey: "是否使用 trace.moe API Key? `{hasKey}`",
   helpHomepage: "主页: {homepage}",
-  helpSearchCount: "您最近 30 天的搜索次数: {count}",
+  helpSearchCount: "您最近 30 天的搜索次数: `{count}`",
   helpLanguage: "语言: {language}",
   helpOptions:
-    "选项：在消息或附言中包含 'mute' (静音视频)，'nocrop' (禁用自动裁剪)，或 'skip' (跳过视频预览)",
+    "您可以在附言中包含以下关键词：\n" +
+    "  `mute` → 静音视频 (变成 GIF)\n" +
+    "  `nocrop` → 禁用自动黑边裁剪\n" +
+    "  `skip` → 仅返回文字，不显示视频预览",
   helpCommandDescription: "获取帮助和 trace.moe 机器人使用说明",
   langCommandDescription: "更改首选语言",
   selectLanguage: "请选择您的首选语言：",
@@ -72,12 +75,14 @@ const zhHansLocale: LocaleStrings = {
 const zhHantLocale: LocaleStrings = {
   helpBotName: "機器人名稱: {botName}",
   helpRevision: "版本: `{revision}`",
-  helpApiKey: "是否使用 trace.moe API Key? `{hasKey}`",
   helpHomepage: "主頁: {homepage}",
-  helpSearchCount: "您最近 30 天的搜尋次數: {count}",
+  helpSearchCount: "您最近 30 天的搜尋次數: `{count}`",
   helpLanguage: "語言: {language}",
   helpOptions:
-    "選項：在訊息或附言中包含 'mute' (靜音影片)，'nocrop' (禁用自動裁剪)，或 'skip' (跳過影片預覽)",
+    "您可以在附言中包含以下關鍵字：\n" +
+    "  `mute` → 靜音影片 (變成 GIF)\n" +
+    "  `nocrop` → 禁用自動黑邊裁剪\n" +
+    "  `skip` → 僅返回文字，不顯示影片預覽",
   helpCommandDescription: "獲取幫助和 trace.moe 機器人使用說明",
   langCommandDescription: "更改偏好語言",
   selectLanguage: "請選擇您的偏好語言：",
@@ -96,12 +101,14 @@ const zhHantLocale: LocaleStrings = {
 const jaLocale: LocaleStrings = {
   helpBotName: "ボット名: {botName}",
   helpRevision: "リビジョン: `{revision}`",
-  helpApiKey: "trace.moe APIキーを使用中? `{hasKey}`",
   helpHomepage: "ホームページ: {homepage}",
-  helpSearchCount: "検索回数 (過去30日間): {count}",
+  helpSearchCount: "検索回数 (過去30日間): `{count}`",
   helpLanguage: "言語: {language}",
   helpOptions:
-    "オプション：メッセージまたはキャプションに 'mute' (消音)、'nocrop' (自動クロップ無効)、または 'skip' (動画プレビュー省略) を含める",
+    "キャプションに以下のキーワードを含めることができます：\n" +
+    "  `mute` → 動画をミュート (GIFにして送信)\n" +
+    "  `nocrop` → 自動黒枠クロップを無効化\n" +
+    "  `skip` → 動画プレビューを省略しテキストのみ返信",
   helpCommandDescription: "ヘルプと trace.moe ボットの使い方を表示",
   langCommandDescription: "優先言語を変更",
   selectLanguage: "優先する言語を選択してください：",
