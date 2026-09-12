@@ -7,7 +7,7 @@ import { getTranslation, getMappedLocale } from "./i18n.ts";
 let REVISION: string;
 try {
   REVISION = child_process.execSync("git rev-parse HEAD").toString().trim();
-} catch (e) {
+} catch {
   REVISION = "";
 }
 
@@ -35,8 +35,7 @@ export const getHelpMessage = async (botName: string, fromId: number, langCode?:
   ].join("\n");
 };
 
-export const escapeMarkdownV2 = (text: string) =>
-  text.replace(/([\_\*\[\]\(\)\~\>\#\+\-\=\|\{\}\.\!])/g, "\\$1");
+export const escapeMarkdownV2 = (text: string) => text.replace(/([_*[\]()~>#+\-={}.!|])/g, "\\$1");
 
 export const escapeCode = (text: string) => text.replace(/\\/g, "\\\\").replace(/`/g, "\\`");
 

@@ -65,7 +65,7 @@ export const submitSearch = async (
         ].join("&")}`,
         TRACE_MOE_KEY ? { headers: { "x-trace-key": TRACE_MOE_KEY } } : {},
       );
-    } catch (e) {
+    } catch {
       trial = 0;
       return { text: getTranslation(langCode, "apiError") };
     }

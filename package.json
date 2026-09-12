@@ -16,14 +16,15 @@
   "main": "server.ts",
   "scripts": {
     "start": "node --dns-result-order=ipv6first server.ts",
-    "oxfmt": "oxfmt",
-    "format": "oxfmt --write \"**/*.*\"",
-    "lint": "oxfmt --check \"**/*.*\"",
-    "test": "oxfmt --check \"**/*.*\""
+    "format": "oxfmt",
+    "lint": "oxlint",
+    "lint:fix": "oxlint --fix",
+    "test": "oxfmt --check && oxlint"
   },
   "devDependencies": {
     "@effect-ak/tg-bot-api": "^1.12.0",
     "@types/node": "^26.4.1",
-    "oxfmt": "^0.67.0"
+    "oxfmt": "^0.67.0",
+    "oxlint": "^1.82.0"
   }
 }
