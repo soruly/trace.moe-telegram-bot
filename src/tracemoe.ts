@@ -61,7 +61,7 @@ export const submitSearch = async (
         `https://api.trace.moe/search?${[
           "anilistInfo=1",
           `url=${encodeURIComponent(imageFileURL)}`,
-          opts.noCrop ? "" : "cutBorders=1",
+          opts.noCrop ? "" : "cutBorders=2",
         ].join("&")}`,
         TRACE_MOE_KEY ? { headers: { "x-trace-key": TRACE_MOE_KEY } } : {},
       );
