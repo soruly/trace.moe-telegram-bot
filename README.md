@@ -71,7 +71,18 @@ TRACE_MOE_KEY=        # (optional)
 FILTER_ADULT=         # (optional) Default: true
 ```
 
+### Host with Telegram Serverless
+
+You can host the bot directly on Telegram's native infrastructure without managing a VPS or SSL certificates:
+
+1. Open [@BotFather](https://t.me/BotFather) and enable **Serverless** for your bot to obtain deployment access.
+2. Deploy the project with the `tgcloud` CLI:
+   ```bash
+   npx tgcloud push
+   ```
+
 ### Host with docker
+
 
 Docker Image available on [Docker Hub](https://hub.docker.com/repository/docker/soruly/trace.moe-telegram-bot) or [GitHub Container Registry](https://github.com/soruly/trace.moe-telegram-bot/pkgs/container/trace.moe-telegram-bot)
 

@@ -4,20 +4,17 @@ import http from "node:http";
 import type { Message } from "@effect-ak/tg-bot-api";
 
 import { PORT, ADDR, TELEGRAM_TOKEN, TELEGRAM_WEBHOOK, TELEGRAM_API } from "./src/config.ts";
-import {
-  privateMessageHandler,
-  groupMessageHandler,
-  guestMessageHandler,
-  callbackQueryHandler,
-} from "./src/handlers.ts";
-import { getTranslation, locales } from "./src/i18n.ts";
+import { callbackQueryHandler, messageHandler } from "./src/handlers.ts";
 import {
   botName,
+  registerBotCommands,
   setBotName,
-  setMessageReaction,
-  messageIsMentioningBot,
-  setMyCommands,
 } from "./src/telegram.ts";
+
+if (!TELEGRAM_TOKEN || !TELEGRAM_WEBHOOK) {
+  console.log("Please configure TELEGRAM_TOKEN and TELEGRAM_WEBHOOK first");
+  process.exit(1);
+}
 
 console.log(`WEBHOOK: ${TELEGRAM_WEBHOOK}`);
 console.log(`Use trace.moe API: ${process.env.TRACE_MOE_KEY ? "with" : "without"} API Key`);
@@ -39,17 +36,7 @@ await fetch(
     console.log(e);
   });
 
-for (const langCode of Object.keys(locales)) {
-  setMyCommands({
-    commands: [
-      { command: "help", description: getTranslation(langCode, "helpCommandDescription") },
-      { command: "lang", description: getTranslation(langCode, "langCommandDescription") },
-    ],
-    language_code: langCode,
-  }).catch((err) => {
-    console.error(`Failed to set bot commands for ${langCode}:`, err);
-  });
-}
+registerBotCommands();
 
 fetch(`${TELEGRAM_API}/bot${TELEGRAM_TOKEN}/getMe`)
   .then((e) => e.json())
@@ -93,24 +80,8 @@ const server = http.createServer({ keepAliveTimeout: 60000 }, async (req, res) =
         await callbackQueryHandler(request.callback_query);
       } else {
         const message: Message = request.message ?? request.edited_message ?? request.guest_message;
-        if (message?.guest_query_id && messageIsMentioningBot(message)) {
-          await guestMessageHandler(message);
-        } else if (message?.chat?.type === "private") {
-          await privateMessageHandler(message);
-          setMessageReaction({
-            chat_id: message.chat.id,
-            message_id: message.message_id,
-            reaction: [],
-          });
-        } else if (message?.chat?.type === "group" || message?.chat?.type === "supergroup") {
-          if (messageIsMentioningBot(message)) {
-            await groupMessageHandler(message);
-            setMessageReaction({
-              chat_id: message.chat.id,
-              message_id: message.message_id,
-              reaction: [],
-            });
-          }
+        if (message) {
+          await messageHandler(message);
         }
       }
       return res.writeHead(204).end();

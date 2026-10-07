@@ -17,7 +17,10 @@
 ## Directory Structure
 
 ```
-├── server.ts                    # Main Telegram bot webhook server entry point
+├── server.ts                    # Main Telegram bot webhook server entry point (Node standalone)
+├── tgcloud.jsonc                # Telegram Serverless project configuration
+├── schema.sql                   # Database schema for Telegram Serverless migrations
+├── schema.js                    # Database schema JavaScript module
 ├── package.json                 # Project dependencies, scripts, and engines
 ├── tsconfig.json                # TypeScript compiler configuration (erasableSyntaxOnly)
 ├── .oxfmtrc.json                # oxfmt code formatter configuration
@@ -28,10 +31,14 @@
 ├── SECURITY.md                  # Security policy
 ├── CODE_OF_CONDUCT.md           # Contributor Covenant Code of Conduct
 ├── .env.example                 # Environment configuration template
+├── handlers/                    # Telegram Serverless event entry points
+│   ├── message.ts               # Message handler for Telegram Serverless
+│   ├── edited_message.ts        # Edited message handler for Telegram Serverless
+│   └── callback_query.ts        # Callback query handler for Telegram Serverless
 └── src/                         # Server internal modules
     ├── config.ts                # Environment variable parsing and validation
-    ├── db.ts                    # SQLite schema, user preference, and log persistence
-    ├── handlers.ts              # Handlers for private/group messages and callback queries
+    ├── db.ts                    # Dual-mode SQLite schema, user preference, and log persistence
+    ├── handlers.ts              # Core logic for private/group messages and callback queries
     ├── i18n.ts                  # Localization dictionaries (en, ja, zh-TW, zh-CN)
     ├── telegram.ts              # Telegram Bot API helper methods and bot command registration
     ├── tracemoe.ts              # trace.moe HTTP search API client
@@ -42,14 +49,16 @@
 
 ## Command Reference
 
-| Action                  | Command              | Notes                                             |
-| :---------------------- | :------------------- | :------------------------------------------------ |
-| **Start Server**        | `npm start`          | Starts bot server (`node --dns-result-order=...`) |
-| **Format Code**         | `npm run format`     | Formats all project files in-place using `oxfmt`  |
-| **Lint**                | `npm run lint`       | Checks code using `oxlint`                        |
-| **Lint & Fix**          | `npm run lint:fix`   | Automatically fixes lint issues with `oxlint`     |
-| **Test & Verify**       | `npm test`           | Runs `oxfmt --check` and `oxlint`                 |
-| **Direct TS Execution** | `node <filepath>.ts` | Runs any `.ts` script directly in Node >= 24      |
+| Action                  | Command                 | Notes                                             |
+| :---------------------- | :---------------------- | :------------------------------------------------ |
+| **Start Server**        | `npm start`             | Starts bot server (`node --dns-result-order=...`) |
+| **Deploy Serverless**   | `npm run deploy:tgcloud`| Deploys bot to Telegram Serverless (`tgcloud push`)|
+| **Register Commands**   | `npm run set-commands`  | Registers bot commands with Telegram API          |
+| **Format Code**         | `npm run format`        | Formats all project files in-place using `oxfmt`  |
+| **Lint**                | `npm run lint`          | Checks code using `oxlint`                        |
+| **Lint & Fix**          | `npm run lint:fix`      | Automatically fixes lint issues with `oxlint`     |
+| **Test & Verify**       | `npm test`              | Runs `oxfmt --check` and `oxlint`                 |
+| **Direct TS Execution** | `node <filepath>.ts`    | Runs any `.ts` script directly in Node >= 24      |
 
 ---
 

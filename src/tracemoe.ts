@@ -1,7 +1,7 @@
 import { TRACE_MOE_KEY } from "./config.ts";
-import { insert } from "./db.ts";
+import { saveSearchLog } from "./db.ts";
 import { getTranslation } from "./i18n.ts";
-import { formatTime, escapeCode } from "./utils.ts";
+import { escapeCode, formatTime } from "./utils.ts";
 
 export interface AnilistTitle {
   native: string | null;
@@ -73,11 +73,7 @@ export const submitSearch = async (
       trial = 0;
       return { text: getTranslation(langCode, "apiError") };
     }
-    insert.run({
-      $user_id: userId,
-      $code: response.status,
-      $lang_code: langCode ?? null,
-    });
+    saveSearchLog(userId, response.status, langCode ?? null);
     if (response.status === 503 || response.status === 402) {
       await new Promise((resolve) => setTimeout(resolve, Math.floor(Math.random() * 4000) + 1000));
     } else trial = 0;

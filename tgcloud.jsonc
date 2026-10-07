@@ -1,0 +1,12 @@
+{
+  "$schema": "https://telegram.org/tgcloud/tgcloud.schema.json",
+  "name": "trace-moe-telegram-bot",
+  "handlers": {
+    "message": "handlers/message.ts",
+    "edited_message": "handlers/edited_message.ts",
+    "callback_query": "handlers/callback_query.ts"
+  },
+  "database": {
+    "schema": "schema.sql"
+  }
+}

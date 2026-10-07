@@ -23,6 +23,8 @@
   "main": "server.ts",
   "scripts": {
     "start": "node --dns-result-order=ipv6first server.ts",
+    "deploy:tgcloud": "tgcloud push",
+    "set-commands": "node -e 'import(\"./src/telegram.ts\").then(m => m.registerBotCommands())'",
     "format": "oxfmt",
     "lint": "oxlint",
     "lint:fix": "oxlint --fix",

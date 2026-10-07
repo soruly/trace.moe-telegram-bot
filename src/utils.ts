@@ -1,8 +1,8 @@
 import child_process from "node:child_process";
 
 import packageConfig from "../package.json" with { type: "json" };
-import { select, getUserLang } from "./db.ts";
-import { getTranslation, getMappedLocale } from "./i18n.ts";
+import { getSearchCount, getUserLang } from "./db.ts";
+import { getMappedLocale, getTranslation } from "./i18n.ts";
 
 let REVISION: string;
 try {
@@ -14,8 +14,7 @@ try {
 export { REVISION };
 
 export const getHelpMessage = async (botName: string, fromId: number, langCode?: string) => {
-  const countObj = select.get({ $user_id: fromId }) as { count: number } | undefined;
-  const count = countObj ? countObj.count : 0;
+  const count = getSearchCount(fromId);
   const userPreference = getUserLang(fromId);
   const effectiveLang = userPreference ?? langCode;
   return [

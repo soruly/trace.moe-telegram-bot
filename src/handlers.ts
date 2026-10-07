@@ -6,19 +6,20 @@ import { FILTER_ADULT } from "./config.ts";
 import { getUserLang, setUserLang } from "./db.ts";
 import { getTranslation } from "./i18n.ts";
 import {
-  botName,
-  sendMessage,
-  sendChatAction,
-  setMessageReaction,
-  sendVideo,
-  answerGuestQuery,
   answerCallbackQuery,
+  answerGuestQuery,
+  botName,
   editMessageReplyMarkup,
   editMessageText,
   getImageFromMessage,
+  messageIsMentioningBot,
+  sendChatAction,
+  sendMessage,
+  setMessageReaction,
+  sendVideo,
 } from "./telegram.ts";
 import { submitSearch, type SearchOptions, type SearchResult } from "./tracemoe.ts";
-import { getHelpMessage, escapeMarkdownV2, enqueueUserTask } from "./utils.ts";
+import { enqueueUserTask, escapeMarkdownV2, getHelpMessage } from "./utils.ts";
 
 interface CachedLowSimilarityResult {
   result: SearchResult;
@@ -522,3 +523,26 @@ export const guestMessageHandler = async (message: Message) => {
     },
   });
 };
+
+export const messageHandler = async (message: Message) => {
+  if (message?.guest_query_id && messageIsMentioningBot(message)) {
+    await guestMessageHandler(message);
+  } else if (message?.chat?.type === "private") {
+    await privateMessageHandler(message);
+    setMessageReaction({
+      chat_id: message.chat.id,
+      message_id: message.message_id,
+      reaction: [],
+    });
+  } else if (message?.chat?.type === "group" || message?.chat?.type === "supergroup") {
+    if (messageIsMentioningBot(message)) {
+      await groupMessageHandler(message);
+      setMessageReaction({
+        chat_id: message.chat.id,
+        message_id: message.message_id,
+        reaction: [],
+      });
+    }
+  }
+};
+
