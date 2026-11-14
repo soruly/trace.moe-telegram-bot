@@ -29,10 +29,10 @@
     "test": "oxfmt --check && oxlint"
   },
   "devDependencies": {
-    "@effect-ak/tg-bot-api": "^1.12.0",
+    "@effect-ak/tg-bot-api": "^1.13.0",
     "@types/node": "^26.6.6",
-    "oxfmt": "^0.75.0",
-    "oxlint": "^1.90.0"
+    "oxfmt": "^0.78.0",
+    "oxlint": "^1.93.0"
   },
   "engines": {
     "node": ">=24"
