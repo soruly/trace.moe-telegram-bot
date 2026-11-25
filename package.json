@@ -31,7 +31,7 @@
   "devDependencies": {
     "@effect-ak/tg-bot-api": "^1.13.0",
     "@types/node": "^26.6.6",
-    "oxfmt": "^0.78.0",
+    "oxfmt": "^0.79.0",
     "oxlint": "^1.93.0"
   },
   "engines": {
